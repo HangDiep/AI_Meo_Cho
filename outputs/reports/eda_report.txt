@@ -1,0 +1,17 @@
+============================================================
+        THỐNG KÊ DATASET
+============================================================
+
+[Train] Tổng: 4102
+  - With_mask: 2069 ảnh (50.4%)
+  - Without_mask: 2033 ảnh (49.6%)
+
+[Val] Tổng: 962
+  - With_mask: 467 ảnh (48.5%)
+  - Without_mask: 495 ảnh (51.5%)
+
+[Test] Tổng: 1809
+  - With_mask: 849 ảnh (46.9%)
+  - Without_mask: 960 ảnh (53.1%)
+
+Tổng toàn bộ dataset: 6873 ảnh
