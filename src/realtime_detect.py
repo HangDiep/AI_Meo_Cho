@@ -59,56 +59,153 @@ def download_haarcascade():
     return False
 
 
-def run_realtime():
-    """Chạy nhận diện khẩu trang realtime qua webcam."""
-
-    # =================================================================
-    # CHUẨN BỊ
-    # =================================================================
-
-    # Download/Copy Haar Cascade
+def init_realtime_resources():
+    """Khởi tạo model và bộ dò khuôn mặt cho realtime detection."""
     if not download_haarcascade():
-        return
+        raise RuntimeError("Không tìm Haar Cascade.")
 
-    # Load face detector
     face_cascade = cv2.CascadeClassifier(HAARCASCADE_PATH)
     if face_cascade.empty():
-        print("⚠️ Không load được Haar Cascade, nhưng sẽ thử dùng MediaPipe trước.")
+        print("⚠️ Không load được Haar Cascade, nhưng sẽ thử dùng MediaPipe nếu có.")
 
-    # Initialize MediaPipe Face Detection
     try:
         import mediapipe as mp
         mp_face_detection = mp.solutions.face_detection
         face_detector = mp_face_detection.FaceDetection(
-            model_selection=0,  # 0: khoảng cách gần (webcam), 1: khoảng cách xa (5m)
+            model_selection=0,
             min_detection_confidence=0.5
         )
         use_mediapipe = True
         print("💡 Đang sử dụng bộ dò khuôn mặt MediaPipe (hỗ trợ góc nghiêng cực tốt).")
     except ImportError:
         use_mediapipe = False
+        face_detector = None
         print("⚠️ Không thể import mediapipe. Tự động chuyển sang Haar Cascade (chỉ nhận diện mặt thẳng).")
 
-    # Load mask detection model
     model_path = BEST_MODEL_FINAL if os.path.exists(BEST_MODEL_FINAL) else BEST_MODEL_PHASE1
     if not os.path.exists(model_path):
-        print("❌ Không tìm thấy model! Hãy chạy train.py trước.")
-        return
+        raise FileNotFoundError("Không tìm thấy model! Hãy chạy train.py trước.")
 
     print(f"📦 Loading model: {model_path}")
-    model = tf.keras.models.load_model(
-    model_path,
-    compile=False
-)
+    model = tf.keras.models.load_model(model_path, compile=False)
 
-    # Mở webcam
+    return model, face_cascade, use_mediapipe, face_detector
+
+
+def process_frame(frame, model, face_cascade, use_mediapipe=False, face_detector=None):
+    """Xử lý frame webcam, nhận diện mặt và vẽ bounding box."""
+    faces = []
+
+    if use_mediapipe and face_detector is not None:
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = face_detector.process(rgb_frame)
+        ih, iw, _ = frame.shape
+        if results.detections:
+            for detection in results.detections:
+                bboxC = detection.location_data.relative_bounding_box
+                x = int(bboxC.xmin * iw)
+                y = int(bboxC.ymin * ih)
+                w = int(bboxC.width * iw)
+                h = int(bboxC.height * ih)
+                x_clipped = max(0, x)
+                y_clipped = max(0, y)
+                w_clipped = min(w + (x - x_clipped), iw - x_clipped)
+                h_clipped = min(h + (y - y_clipped), ih - y_clipped)
+                if w_clipped > 30 and h_clipped > 30:
+                    faces.append((x_clipped, y_clipped, w_clipped, h_clipped))
+    else:
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        detected_faces = face_cascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(60, 60),
+        )
+        faces = list(detected_faces)
+
+    total_faces = len(faces)
+    mask_count = 0
+    no_mask_count = 0
+
+    for (x, y, w, h) in faces:
+        face_roi = frame[y : y + h, x : x + w]
+        if face_roi.size == 0:
+            continue
+
+        face_resized = cv2.resize(face_roi, IMG_SIZE)
+        face_array = img_to_array(face_resized) * RESCALE
+        face_input = np.expand_dims(face_array, axis=0)
+
+        prob = model.predict(face_input, verbose=0)[0][0]
+        if prob >= DETECTION_CONFIDENCE:
+            label = CLASS_NAMES[1]
+            confidence = prob
+            color = COLOR_NO_MASK
+            no_mask_count += 1
+        else:
+            label = CLASS_NAMES[0]
+            confidence = 1 - prob
+            color = COLOR_MASK
+            mask_count += 1
+
+        cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+        text = f"{label}: {confidence:.0%}"
+        text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
+        cv2.rectangle(
+            frame,
+            (x, y - text_size[1] - 10),
+            (x + text_size[0], y),
+            color,
+            -1,
+        )
+        cv2.putText(
+            frame,
+            text,
+            (x, y - 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2,
+        )
+
+    stats_y = 30
+    cv2.putText(frame, f"Total: {total_faces}", (10, stats_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.putText(frame, f"Mask: {mask_count}", (10, stats_y + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_MASK, 2)
+    cv2.putText(frame, f"No Mask: {no_mask_count}", (10, stats_y + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_NO_MASK, 2)
+
+    return frame
+
+
+def generate_frames(model, face_cascade, use_mediapipe=False, face_detector=None):
     cap = cv2.VideoCapture(WEBCAM_INDEX)
     if not cap.isOpened():
-        print("❌ Không thể mở webcam!")
-        return
+        raise RuntimeError("Không thể mở webcam!")
 
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
+
+    try:
+        while True:
+            success, frame = cap.read()
+            if not success:
+                break
+
+            frame = process_frame(frame, model, face_cascade, use_mediapipe, face_detector)
+            ret, buffer = cv2.imencode('.jpg', frame)
+            if not ret:
+                continue
+
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+    finally:
+        cap.release()
+
+
+def run_realtime():
+    """Chạy nhận diện khẩu trang realtime qua webcam."""
+
+    model, face_cascade, use_mediapipe, face_detector = init_realtime_resources()
 
     print("\n🎥 WEBCAM REALTIME — Nhận diện khẩu trang")
     print("   Phím Q: Thoát")
@@ -117,9 +214,13 @@ def run_realtime():
 
     screenshot_count = 0
 
-    # =================================================================
-    # VÒNG LẶP CHÍNH
-    # =================================================================
+    cap = cv2.VideoCapture(WEBCAM_INDEX)
+    if not cap.isOpened():
+        print("❌ Không thể mở webcam!")
+        return
+
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
 
     while True:
         ret, frame = cap.read()
@@ -127,113 +228,10 @@ def run_realtime():
             print("⚠️  Không đọc được frame từ webcam")
             break
 
-        # Detect khuôn mặt
-        faces = []
-        if use_mediapipe:
-            # MediaPipe yêu cầu định dạng RGB
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = face_detector.process(rgb_frame)
-            
-            ih, iw, _ = frame.shape
-            if results.detections:
-                for detection in results.detections:
-                    bboxC = detection.location_data.relative_bounding_box
-                    x = int(bboxC.xmin * iw)
-                    y = int(bboxC.ymin * ih)
-                    w = int(bboxC.width * iw)
-                    h = int(bboxC.height * ih)
-                    
-                    # Giới hạn bounding box trong khung hình để tránh lỗi index âm hoặc vượt quá kích thước ảnh
-                    x_clipped = max(0, x)
-                    y_clipped = max(0, y)
-                    w_clipped = min(w + (x - x_clipped), iw - x_clipped)
-                    h_clipped = min(h + (y - y_clipped), ih - y_clipped)
-                    
-                    if w_clipped > 30 and h_clipped > 30:  # Loại bỏ các vùng quá bé
-                        faces.append((x_clipped, y_clipped, w_clipped, h_clipped))
-        else:
-            # Chuyển sang grayscale để detect khuôn mặt bằng Haar Cascade
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            detected_faces = face_cascade.detectMultiScale(
-                gray,
-                scaleFactor=1.1,
-                minNeighbors=5,
-                minSize=(60, 60),
-            )
-            faces = list(detected_faces)
-
-        # Thống kê
-        total_faces = len(faces)
-        mask_count = 0
-        no_mask_count = 0
-
-        # Xử lý từng khuôn mặt
-        for (x, y, w, h) in faces:
-            # Crop vùng mặt từ frame gốc (RGB)
-            face_roi = frame[y:y + h, x:x + w]
-
-            if face_roi.size == 0:
-                continue
-
-            # Tiền xử lý cho model
-            face_resized = cv2.resize(face_roi, IMG_SIZE)
-            face_array = img_to_array(face_resized) * RESCALE
-            face_input = np.expand_dims(face_array, axis=0)
-
-            # Dự đoán
-            prob = model.predict(face_input, verbose=0)[0][0]
-
-            if prob >= DETECTION_CONFIDENCE:
-                label = CLASS_NAMES[1]  # Without_mask
-                confidence = prob
-                color = COLOR_NO_MASK
-                no_mask_count += 1
-            else:
-                label = CLASS_NAMES[0]  # With_mask
-                confidence = 1 - prob
-                color = COLOR_MASK
-                mask_count += 1
-
-            # Vẽ bounding box
-            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-
-            # Vẽ label + confidence
-            text = f"{label}: {confidence:.0%}"
-            text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
-
-            # Background cho text
-            cv2.rectangle(
-                frame,
-                (x, y - text_size[1] - 10),
-                (x + text_size[0], y),
-                color, -1,
-            )
-            cv2.putText(
-                frame, text,
-                (x, y - 5),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                (255, 255, 255), 2,
-            )
-
-        # =============================================================
-        # HIỂN THỊ THỐNG KÊ
-        # =============================================================
-        stats_y = 30
-        cv2.putText(frame, f"Total: {total_faces}", (10, stats_y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        cv2.putText(frame, f"Mask: {mask_count}", (10, stats_y + 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_MASK, 2)
-        cv2.putText(frame, f"No Mask: {no_mask_count}", (10, stats_y + 60),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_NO_MASK, 2)
-
-        # Hiển thị frame
+        frame = process_frame(frame, model, face_cascade, use_mediapipe, face_detector)
         cv2.imshow("Mask Detection — Press Q to quit", frame)
 
-        # =============================================================
-        # XỬ LÝ PHÍM
-        # =============================================================
         key = cv2.waitKey(1) & 0xFF
-
         if key == ord("q") or key == ord("Q"):
             break
         elif key == ord("s") or key == ord("S"):
@@ -243,11 +241,3 @@ def run_realtime():
             cv2.imwrite(screenshot_path, frame)
             print(f"📸 Screenshot saved: {screenshot_path}")
 
-    # Cleanup
-    cap.release()
-    cv2.destroyAllWindows()
-    print("\n👋 Đã tắt webcam.")
-
-
-if __name__ == "__main__":
-    run_realtime()
