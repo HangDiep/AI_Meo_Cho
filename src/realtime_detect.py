@@ -73,8 +73,21 @@ def run_realtime():
     # Load face detector
     face_cascade = cv2.CascadeClassifier(HAARCASCADE_PATH)
     if face_cascade.empty():
-        print("❌ Không load được Haar Cascade!")
-        return
+        print("⚠️ Không load được Haar Cascade, nhưng sẽ thử dùng MediaPipe trước.")
+
+    # Initialize MediaPipe Face Detection
+    try:
+        import mediapipe as mp
+        mp_face_detection = mp.solutions.face_detection
+        face_detector = mp_face_detection.FaceDetection(
+            model_selection=0,  # 0: khoảng cách gần (webcam), 1: khoảng cách xa (5m)
+            min_detection_confidence=0.5
+        )
+        use_mediapipe = True
+        print("💡 Đang sử dụng bộ dò khuôn mặt MediaPipe (hỗ trợ góc nghiêng cực tốt).")
+    except ImportError:
+        use_mediapipe = False
+        print("⚠️ Không thể import mediapipe. Tự động chuyển sang Haar Cascade (chỉ nhận diện mặt thẳng).")
 
     # Load mask detection model
     model_path = BEST_MODEL_FINAL if os.path.exists(BEST_MODEL_FINAL) else BEST_MODEL_PHASE1
@@ -83,7 +96,10 @@ def run_realtime():
         return
 
     print(f"📦 Loading model: {model_path}")
-    model = tf.keras.models.load_model(model_path)
+    model = tf.keras.models.load_model(
+    model_path,
+    compile=False
+)
 
     # Mở webcam
     cap = cv2.VideoCapture(WEBCAM_INDEX)
@@ -111,16 +127,40 @@ def run_realtime():
             print("⚠️  Không đọc được frame từ webcam")
             break
 
-        # Chuyển sang grayscale để detect khuôn mặt
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
         # Detect khuôn mặt
-        faces = face_cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(60, 60),
-        )
+        faces = []
+        if use_mediapipe:
+            # MediaPipe yêu cầu định dạng RGB
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = face_detector.process(rgb_frame)
+            
+            ih, iw, _ = frame.shape
+            if results.detections:
+                for detection in results.detections:
+                    bboxC = detection.location_data.relative_bounding_box
+                    x = int(bboxC.xmin * iw)
+                    y = int(bboxC.ymin * ih)
+                    w = int(bboxC.width * iw)
+                    h = int(bboxC.height * ih)
+                    
+                    # Giới hạn bounding box trong khung hình để tránh lỗi index âm hoặc vượt quá kích thước ảnh
+                    x_clipped = max(0, x)
+                    y_clipped = max(0, y)
+                    w_clipped = min(w + (x - x_clipped), iw - x_clipped)
+                    h_clipped = min(h + (y - y_clipped), ih - y_clipped)
+                    
+                    if w_clipped > 30 and h_clipped > 30:  # Loại bỏ các vùng quá bé
+                        faces.append((x_clipped, y_clipped, w_clipped, h_clipped))
+        else:
+            # Chuyển sang grayscale để detect khuôn mặt bằng Haar Cascade
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            detected_faces = face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.1,
+                minNeighbors=5,
+                minSize=(60, 60),
+            )
+            faces = list(detected_faces)
 
         # Thống kê
         total_faces = len(faces)

@@ -54,7 +54,10 @@ def evaluate():
         return
 
     print(f"\n📦 Loading model: {model_path}")
-    model = tf.keras.models.load_model(model_path)
+    model = tf.keras.models.load_model(
+    model_path,
+    compile=False
+)
 
     # =================================================================
     # TẠO TEST GENERATOR

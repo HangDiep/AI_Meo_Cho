@@ -35,7 +35,10 @@ def predict_single(image_path, model=None):
     # Load model nếu chưa có
     if model is None:
         model_path = BEST_MODEL_FINAL if os.path.exists(BEST_MODEL_FINAL) else BEST_MODEL_PHASE1
-        model = tf.keras.models.load_model(model_path)
+        model = tf.keras.models.load_model(
+    model_path,
+    compile=False
+)
 
     # Load và tiền xử lý ảnh
     img = load_img(image_path, target_size=IMG_SIZE)
