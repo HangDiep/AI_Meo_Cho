@@ -10,6 +10,7 @@ from keras.models import Model
 from keras.optimizers import Adam
 from keras.utils import to_categorical
 
+
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 
@@ -21,7 +22,7 @@ import os
 
 INIT_LR = 1e-4
 EPOCHS = 10
-BS = 32
+BS = 30
 
 dataset = "../Facemaskdataset/train"
 
