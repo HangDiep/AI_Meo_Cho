@@ -1,0 +1,36 @@
+============================================================
+  BÁO CÁO ĐÁNH GIÁ MÔ HÌNH MASK DETECTION
+============================================================
+
+Model: D:\AI\Khuau_trang\models\best_final.h5
+
+Test Loss:     0.0934
+Test Accuracy: 0.9641 (96.41%)
+AUC Score:     0.9969
+
+────────────────────────────────────────
+Confusion Matrix:
+  TP (With_mask đúng):    843
+  FN (With_mask sai):     6
+  FP (Without_mask sai):  59
+  TN (Without_mask đúng): 901
+
+────────────────────────────────────────
+Classification Report:
+              precision    recall  f1-score   support
+
+   With_mask     0.9346    0.9929    0.9629       849
+Without_mask     0.9934    0.9385    0.9652       960
+
+    accuracy                         0.9641      1809
+   macro avg     0.9640    0.9657    0.9640      1809
+weighted avg     0.9658    0.9641    0.9641      1809
+
+
+────────────────────────────────────────
+Biểu đồ đã lưu:
+  - D:\AI\Khuau_trang\outputs\plots\confusion_matrix.png
+  - D:\AI\Khuau_trang\outputs\plots\roc_curve.png
+  - D:\AI\Khuau_trang\outputs\plots\training_history.png
+  - D:\AI\Khuau_trang\outputs\plots\correct_predictions.png
+  - D:\AI\Khuau_trang\outputs\plots\wrong_predictions.png

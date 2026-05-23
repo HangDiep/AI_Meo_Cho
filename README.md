@@ -12,3 +12,23 @@ pip install opencv-python
 pip install numpy
 pip install matplotlib
 pip install scikit-learn
+# pip install torch torchvision
+
+
+# Kích hoạt venv
+venv\Scripts\activate
+
+# 1. Phân tích dataset
+python src/data_preprocessing.py
+
+# 2. Huấn luyện (2 pha: freeze → fine-tune)
+python src/train.py
+
+# 3. Đánh giá chi tiết  
+python src/evaluate.py
+
+# 4. Webcam realtime
+python src/realtime_detect.py
+
+# 5. Giao diện web upload ảnh
+python -m src.web_upload
