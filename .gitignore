@@ -1,2 +1,9 @@
 venv/
-.env
+__pycache__/
+*.pyc
+
+models/*.h5
+models/*.npy
+
+outputs/logs/
+outputs/plots/*.png
