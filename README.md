@@ -12,7 +12,6 @@ pip install opencv-python
 pip install numpy
 pip install matplotlib
 pip install scikit-learn
-pip install MediaPipe 
 # pip install torch torchvision
 
 
@@ -31,4 +30,5 @@ python src/evaluate.py
 # 4. Webcam realtime
 python src/realtime_detect.py
 
-python app.py # để chạy ra hẳn giao diện 
+# 5. Giao diện web upload ảnh
+python -m src.web_upload
