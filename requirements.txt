@@ -1,7 +1,9 @@
 tensorflow>=2.10
 opencv-python>=4.7
+Flask>=2.0
 numpy>=1.23
 matplotlib>=3.6
 scikit-learn>=1.2
 seaborn>=0.12
 Pillow>=9.0
+MediaPipe >=0.8.10

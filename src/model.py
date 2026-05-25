@@ -102,7 +102,7 @@ def unfreeze_model(model, fine_tune_at, learning_rate):
         for layer in base_model.layers[:fine_tune_at]:
             layer.trainable = False
     else:
-        # Trường hợp model bị phẳng hóa khi load từ .h5
+        # Trường hợp model bị phẳng hóa khi load từ 
         # → duyệt trực tiếp trên model.layers
         for layer in model.layers:
             layer.trainable = True

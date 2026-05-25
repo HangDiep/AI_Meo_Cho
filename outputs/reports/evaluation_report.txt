@@ -4,27 +4,27 @@
 
 Model: D:\AI\Khuau_trang\models\best_final.h5
 
-Test Loss:     0.0934
-Test Accuracy: 0.9641 (96.41%)
-AUC Score:     0.9969
+Test Loss:     0.2279
+Test Accuracy: 0.9586 (95.86%)
+AUC Score:     0.9793
 
 ────────────────────────────────────────
 Confusion Matrix:
-  TP (With_mask đúng):    843
-  FN (With_mask sai):     6
-  FP (Without_mask sai):  59
-  TN (Without_mask đúng): 901
+  TP (With_mask đúng):    1023
+  FN (With_mask sai):     4
+  FP (Without_mask sai):  83
+  TN (Without_mask đúng): 992
 
 ────────────────────────────────────────
 Classification Report:
               precision    recall  f1-score   support
 
-   With_mask     0.9346    0.9929    0.9629       849
-Without_mask     0.9934    0.9385    0.9652       960
+   With_mask     0.9250    0.9961    0.9592      1027
+Without_mask     0.9960    0.9228    0.9580      1075
 
-    accuracy                         0.9641      1809
-   macro avg     0.9640    0.9657    0.9640      1809
-weighted avg     0.9658    0.9641    0.9641      1809
+    accuracy                         0.9586      2102
+   macro avg     0.9605    0.9594    0.9586      2102
+weighted avg     0.9613    0.9586    0.9586      2102
 
 
 ────────────────────────────────────────
