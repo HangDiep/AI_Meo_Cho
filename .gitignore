@@ -1,17 +1,16 @@
 Facemaskdataset/
-models/
 venv/
 __pycache__/
 outputs/
 data/
-datasets/
+
 *.csv
 *.zip
 
 # Model AI
-models/
+
 *.h5
-*.keras
+
 *.pt
 *.pth
 
