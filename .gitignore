@@ -1,0 +1,31 @@
+# Dataset
+dataset/
+data/
+datasets/
+*.csv
+*.zip
+
+# Model AI
+models/
+*.h5
+*.keras
+*.pt
+*.pth
+
+# Cache
+__pycache__/
+*.pyc
+
+# Env
+venv/
+.env
+
+# VSCode
+.vscode/
+
+# Build
+dist/
+build/
+
+# Log
+*.log

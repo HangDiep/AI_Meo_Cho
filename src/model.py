@@ -6,7 +6,7 @@ không chạy trực tiếp.
 """
 
 import tensorflow as tf
-from tensorflow.keras.applications import EfficientNetB1
+from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.layers import Dense, Dropout, GlobalAveragePooling2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
@@ -32,10 +32,10 @@ def build_model(learning_rate=None, freeze_base=True):
     if learning_rate is None:
         learning_rate = PHASE1_LEARNING_RATE
 
-    # ----- Base Model: EfficientNetB1 pretrained trên ImageNet -----
-    base_model = EfficientNetB1(
+    # ----- Base Model: pretrained trên ImageNet -----
+    base_model = MobileNetV2(
+        include_top=False,
         weights=BASE_MODEL_WEIGHTS,
-        include_top=False,          # Bỏ classification head gốc
         input_shape=IMG_SHAPE,
     )
 
@@ -66,7 +66,7 @@ def build_model(learning_rate=None, freeze_base=True):
     non_trainable = total_params - trainable
 
     print("\n" + "=" * 60)
-    print(f"  MODEL: EfficientNetB1 + Custom Head")
+    print(f"  MODEL: MobileNetV2 + Custom Head")
     print(f"  Base frozen: {freeze_base}")
     print(f"  Total params:       {total_params:,}")
     print(f"  Trainable params:   {trainable:,}")
