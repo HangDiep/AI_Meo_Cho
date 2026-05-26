@@ -1,5 +1,8 @@
-# Dataset
-dataset/
+Facemaskdataset/
+models/
+venv/
+__pycache__/
+outputs/
 data/
 datasets/
 *.csv
