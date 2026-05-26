@@ -13,7 +13,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Dataset
-DATASET_DIR = os.path.join(BASE_DIR, "Facemaskdataset")
+DATASET_DIR = os.path.join(BASE_DIR, "Facemaskdataset", "Facemaskdataset")
 TRAIN_DIR = os.path.join(DATASET_DIR, "train")
 VAL_DIR = os.path.join(DATASET_DIR, "val")
 TEST_DIR = os.path.join(DATASET_DIR, "test")
@@ -37,13 +37,13 @@ CLASS_NAMES = [
     "With_mask",
     "Without_mask"
 ]  # Thứ tự phải khớp với thư mục con trong dataset
-# Label mapping: 0 = With_mask, 1 = Without_mask (theo thứ tự thư mục)
+
 
 # =============================================================================
 # TIỀN XỬ LÝ ẢNH
 # =============================================================================
 
-IMG_SIZE = (224, 224)       # Kích thước input cho 
+IMG_SIZE = (224, 224)       # Kích thước input cho EfficientNetB1
 IMG_SHAPE = (224, 224, 3)   # Shape đầy đủ (width, height, channels)
 BATCH_SIZE = 32
 RESCALE = 1.0 / 255        # Chuẩn hóa pixel [0, 255] → [0, 1]
@@ -53,13 +53,13 @@ RESCALE = 1.0 / 255        # Chuẩn hóa pixel [0, 255] → [0, 1]
 # =============================================================================
 
 AUGMENTATION = {
-    "rotation_range": 45,  # Xoay ngẫu nhiên trong khoảng ±45 độ
-    "width_shift_range": 0.2,
-    "height_shift_range": 0.2,
-    "zoom_range": 0.3,
-    "shear_range": 0.2,
-    "brightness_range": [0.6, 1.3],
+    "rotation_range": 45,        # Tăng từ 25 → 45 độ (cover góc nghiêng nhiều hơn)
+    "width_shift_range": 0.3,
+    "height_shift_range": 0.3,
+    "shear_range": 0.3,          # Tăng từ 0.15 → 0.3 (capture biến dạng góc tốt hơn)
+    "zoom_range": 0.2,           # Tăng từ 0.15 → 0.2
     "horizontal_flip": True,
+    "brightness_range": [0.4, 2.0],  # Mở rộng dải sáng (từ 0.5-1.5 → 0.4-2.0)
     "fill_mode": "nearest"
 }
 
@@ -76,7 +76,6 @@ FREEZE_BASE = True  # Freeze base model ở pha 1
 DENSE_UNITS = 128
 DROPOUT_RATE_1 = 0.5    # Sau GlobalAveragePooling2D
 DROPOUT_RATE_2 = 0.3    # Sau Dense layer
-
 # =============================================================================
 # HUẤN LUYỆN — PHA 1 (Freeze base)
 # =============================================================================
@@ -86,7 +85,7 @@ PHASE1_LEARNING_RATE = 1e-4  # 0.0001
 
 # =============================================================================
 # HUẤN LUYỆN — PHA 2 (Fine-tune)
-# =============================================================================
+# ===============1=============================================================
 
 PHASE2_EPOCHS = 18  # Giảm từ 20 để tối ưu thời gian
 PHASE2_LEARNING_RATE = 1e-5   # 0.00005 (tăng từ 1e-5)
@@ -114,7 +113,7 @@ TRAINING_HISTORY = os.path.join(MODELS_DIR, "training_history.npy")
 # =============================================================================
 
 WEBCAM_INDEX = 0            # 0 = webcam mặc định
-DETECTION_CONFIDENCE = 0.5  # Ngưỡng tin cậy để hiển thị label
+DETECTION_CONFIDENCE = 0.6  # Ngưỡng tin cậy để hiển thị label
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 

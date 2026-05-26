@@ -42,7 +42,7 @@ _frame_count = 0
 PREDICT_EVERY_N_FRAMES = 3
 
 # độ tự tin tối thiểu
-CONF_THRESHOLD = 0.60
+CONF_THRESHOLD = 0.7
 
 # =========================================================
 # DOWNLOAD HAARCASCADE

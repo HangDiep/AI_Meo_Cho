@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Mask Detection System</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body{
+            background:#faf8ff;
+            font-family: Inter, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .glass{
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(12px);
+        }
+
+        .card{
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .live-glow{
+            box-shadow: 0 0 20px rgba(16,185,129,0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header class="bg-emerald-600 text-white px-8 py-5 flex justify-between items-center shadow-lg">
+
+    <div>
+        <h1 class="text-3xl font-bold tracking-wide">
+            AI MASK DETECTION
+        </h1>
+
+        <p class="text-sm opacity-80 mt-1">
+            Real-time Face Mask Monitoring System
+        </p>
+    </div>
+
+    <a href="/about"
+       class="bg-white/20 hover:bg-white/30 px-5 py-3 rounded-xl font-semibold transition">
+        About Project
+    </a>
+
+</header>
+
+
+<!-- MAIN -->
+<div class="grid xl:grid-cols-3 gap-6 p-6">
+
+    <!-- LEFT -->
+    <div class="xl:col-span-2 space-y-6">
+
+        <!-- WEBCAM -->
+        <div class="card overflow-hidden">
+
+            <div class="bg-emerald-500 px-6 py-4 text-white flex justify-between items-center">
+
+                <div>
+                    <h2 class="text-2xl font-bold">
+                        Realtime Camera Detection
+                    </h2>
+
+                    <p class="text-sm opacity-80">
+                        AI Webcam Monitoring
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-green-300 animate-pulse"></div>
+
+                    <span class="font-semibold">
+                        LIVE
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="relative live-glow">
+
+                <img id="webcamStream"
+                     src=""
+                     class="w-full h-[600px] object-cover bg-black">
+
+                
+
+            </div>
+
+            <!-- BUTTON -->
+            <div class="p-5 flex gap-4">
+
+                <button id="startCameraBtn"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition">
+                    START CAMERA
+                </button>
+
+                <button id="stopCameraBtn"
+                        class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold transition">
+                    STOP CAMERA
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- IMAGE UPLOAD -->
+        <div class="card p-6">
+
+            <div class="flex justify-between items-center mb-6">
+
+                <div>
+                    <h2 class="text-2xl font-bold text-emerald-600">
+                        Image Detection
+                    </h2>
+
+                    <p class="text-gray-500">
+                        Upload image for AI prediction
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-6">
+
+                <!-- UPLOAD -->
+                <div>
+
+                    <label class="border-2 border-dashed border-emerald-400 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 transition">
+
+                        <input type="file"
+                               id="uploadImage"
+                               accept="image/*"
+                               class="hidden">
+
+                        <div class="text-6xl mb-4">
+                            📷
+                        </div>
+
+                        <h3 class="font-bold text-lg">
+                            Upload Image
+                        </h3>
+
+                        <p class="text-gray-500 text-sm mt-2">
+                            JPG, PNG supported
+                        </p>
+
+                    </label>
+
+                    <button id="predictBtn"
+                            class="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition">
+                        ANALYZE IMAGE
+                    </button>
+
+                </div>
+
+
+                <!-- PREVIEW -->
+                <div>
+
+                    <img id="previewImage"
+                         class="w-full h-[320px] object-cover rounded-2xl border hidden">
+
+                    <div id="uploadResult"
+                         class="mt-5 bg-gray-50 rounded-2xl p-5 text-lg font-semibold text-center text-gray-700">
+                        No image uploaded
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- RIGHT -->
+    <div class="space-y-6">
+
+        <!-- WEBCAM STATS -->
+        <div class="card p-6">
+
+            <h2 class="text-2xl font-bold text-emerald-600 mb-6">
+                Webcam Statistics
+            </h2>
+
+            <div class="space-y-4">
+
+                <div class="bg-green-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-green-800">
+                        Wearing Mask
+                    </p>
+
+                    <h3 id="maskCount"
+                        class="text-4xl font-bold text-green-700 mt-2">
+                        0
+                    </h3>
+                </div>
+
+                <div class="bg-red-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-red-800">
+                        Without Mask
+                    </p>
+
+                    <h3 id="noMaskCount"
+                        class="text-4xl font-bold text-red-700 mt-2">
+                        0
+                    </h3>
+                </div>
+
+                <div class="bg-yellow-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-yellow-800">
+                        Incorrect Mask
+                    </p>
+
+                    <h3 id="wrongMaskCount"
+                        class="text-4xl font-bold text-yellow-700 mt-2">
+                        0
+                    </h3>
+                </div>
+
+                <div class="bg-blue-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-blue-800">
+                        Total People
+                    </p>
+
+                    <h3 id="totalPeople"
+                        class="text-4xl font-bold text-blue-700 mt-2">
+                        0
+                    </h3>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- IMAGE STATS -->
+        <<div class="card p-6">
+
+            <h2 class="text-2xl font-bold text-emerald-600 mb-6">
+                Image Statistics
+            </h2>
+
+            <div class="space-y-4">
+
+                <div class="bg-green-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-green-800">
+                        Wearing Mask
+                    </p>
+
+                    <h3 id="maskCount"
+                        class="text-4xl font-bold text-green-700 mt-2">
+                        0
+                    </h3>
+                </div>
+
+                <div class="bg-red-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-red-800">
+                        Without Mask
+                    </p>
+
+                    <h3 id="noMaskCount"
+                        class="text-4xl font-bold text-red-700 mt-2">
+                        0
+                    </h3>
+                </div>
+
+                <div class="bg-yellow-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-yellow-800">
+                        Incorrect Mask
+                    </p>
+
+                    <h3 id="wrongMaskCount"
+                        class="text-4xl font-bold text-yellow-700 mt-2">
+                        0
+                    </h3>
+                </div>
+
+                <div class="bg-blue-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-blue-800">
+                        Total People
+                    </p>
+
+                    <h3 id="totalPeople"
+                        class="text-4xl font-bold text-blue-700 mt-2">
+                        0
+                    </h3>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+const webcamImg = document.getElementById('webcamStream');
+
+const startBtn = document.getElementById('startCameraBtn');
+const stopBtn = document.getElementById('stopCameraBtn');
+
+const statusEl = document.getElementById('cameraStatus');
+
+const predictionEl = document.getElementById('predictionResult');
+
+
+// CAMERA
+startBtn.onclick = () => {
+
+    webcamImg.src = "/video_feed";
+
+    statusEl.innerText = "Online";
+    statusEl.classList.remove("text-red-500");
+    statusEl.classList.add("text-green-500");
+
+    predictionEl.innerText = "Realtime AI detection started...";
+};
+
+
+stopBtn.onclick = () => {
+
+    webcamImg.src = "";
+
+    statusEl.innerText = "Offline";
+
+    statusEl.classList.remove("text-green-500");
+    statusEl.classList.add("text-red-500");
+
+    predictionEl.innerText = "Camera stopped.";
+};
+
+
+// IMAGE UPLOAD
+const uploadInput = document.getElementById('uploadImage');
+
+const previewImage = document.getElementById('previewImage');
+
+const uploadResult = document.getElementById('uploadResult');
+
+const imageResult = document.getElementById('imageResult');
+
+const imageConfidence = document.getElementById('imageConfidence');
+
+
+uploadInput.addEventListener('change', (e) => {
+
+    const file = e.target.files[0];
+
+    if(file){
+
+        previewImage.src = URL.createObjectURL(file);
+
+        previewImage.classList.remove('hidden');
+
+        uploadResult.innerHTML = `
+            Image uploaded successfully
+        `;
+    }
+});
+
+
+// DEMO RESULT
+document.getElementById('predictBtn').onclick = () => {
+
+    imageResult.innerText = "Mask Detected";
+
+    imageConfidence.innerText = "98%";
+
+    uploadResult.innerHTML = `
+        <div class="text-green-600 text-xl font-bold">
+            Wearing Mask
+        </div>
+    `;
+};
+
+</script>
+
+</body>
+</html>

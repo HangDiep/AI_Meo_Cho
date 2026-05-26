@@ -32,10 +32,10 @@ def build_model(learning_rate=None, freeze_base=True):
     if learning_rate is None:
         learning_rate = PHASE1_LEARNING_RATE
 
-    # ----- Base Model: pretrained trên ImageNet -----
+    # ----- Base Model: MobileNetV2 pretrained trên ImageNet -----
     base_model = MobileNetV2(
-        include_top=False,
         weights=BASE_MODEL_WEIGHTS,
+        include_top=False,          # Bỏ classification head gốc
         input_shape=IMG_SHAPE,
     )
 
@@ -88,7 +88,7 @@ def unfreeze_model(model, fine_tune_at, learning_rate):
 
     Returns:
         Model đã recompile, sẵn sàng cho pha 2.
-    """
+        """
     # Tìm base model (MobileNetV2) trong các layers
     base_model = None
     for layer in model.layers:
@@ -124,6 +124,7 @@ def unfreeze_model(model, fine_tune_at, learning_rate):
     print(f"  Unfreeze từ layer {fine_tune_at} / {total_layers}")
     print(f"  Trainable params:   {trainable:,}")
     print(f"  Learning rate:      {learning_rate}")
+    print("=" * 60)
     print("=" * 60)
 
     return model
