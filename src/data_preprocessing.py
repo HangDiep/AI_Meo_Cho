@@ -120,7 +120,8 @@ def plot_distribution():
 def show_sample_images(num_per_class=4):
     """Hiển thị grid ảnh mẫu từ tập train."""
 
-    fig, axes = plt.subplots(2, num_per_class, figsize=(4 * num_per_class, 8))
+    fig, axes = plt.subplots(len(CLASS_NAMES), num_per_class,
+                         figsize=(4 * num_per_class, 4 * len(CLASS_NAMES)))
 
     for row, class_name in enumerate(CLASS_NAMES):
         class_dir = os.path.join(TRAIN_DIR, class_name)
@@ -197,28 +198,31 @@ def create_data_generators():
     print("\n[DATA GENERATORS]")
 
     train_generator = train_datagen.flow_from_directory(
-        TRAIN_DIR,
-        target_size=IMG_SIZE,
-        batch_size=BATCH_SIZE,
-        class_mode="binary",
-        shuffle=True,
-    )
+    TRAIN_DIR,
+    target_size=IMG_SIZE,
+    batch_size=BATCH_SIZE,
+    classes=CLASS_NAMES,
+    class_mode="categorical",
+    shuffle=True,
+)
 
     val_generator = val_datagen.flow_from_directory(
-        VAL_DIR,
-        target_size=IMG_SIZE,
-        batch_size=BATCH_SIZE,
-        class_mode="binary",
-        shuffle=False,
-    )
+    VAL_DIR,
+    target_size=IMG_SIZE,
+    batch_size=BATCH_SIZE,
+    classes=CLASS_NAMES,
+    class_mode="categorical",
+    shuffle=True,
+)
 
     test_generator = test_datagen.flow_from_directory(
-        TEST_DIR,
-        target_size=IMG_SIZE,
-        batch_size=BATCH_SIZE,
-        class_mode="binary",
-        shuffle=False,
-    )
+    TEST_DIR,
+    target_size=IMG_SIZE,
+    batch_size=BATCH_SIZE,
+    classes=CLASS_NAMES,
+    class_mode="categorical",
+    shuffle=False,
+)
 
     # In label mapping
     print(f"\nLabel mapping: {train_generator.class_indices}")

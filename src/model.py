@@ -6,7 +6,7 @@ không chạy trực tiếp.
 """
 
 import tensorflow as tf
-from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications import EfficientNetB1
 from tensorflow.keras.layers import Dense, Dropout, GlobalAveragePooling2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
@@ -32,8 +32,8 @@ def build_model(learning_rate=None, freeze_base=True):
     if learning_rate is None:
         learning_rate = PHASE1_LEARNING_RATE
 
-    # ----- Base Model: MobileNetV2 pretrained trên ImageNet -----
-    base_model = MobileNetV2(
+    # ----- Base Model: EfficientNetB1 pretrained trên ImageNet -----
+    base_model = EfficientNetB1(
         weights=BASE_MODEL_WEIGHTS,
         include_top=False,          # Bỏ classification head gốc
         input_shape=IMG_SHAPE,
@@ -48,7 +48,7 @@ def build_model(learning_rate=None, freeze_base=True):
     x = Dropout(DROPOUT_RATE_1)(x)      # Chống overfitting
     x = Dense(DENSE_UNITS, activation="relu")(x)  # Feature extraction
     x = Dropout(DROPOUT_RATE_2)(x)      # Thêm regularization
-    output = Dense(1, activation="sigmoid")(x)     # Output: 0 hoặc 1
+    output = Dense(3, activation="softmax")(x)     # Output: 0, 1, hoặc 2 (3 classes)
 
     # ----- Tạo Model -----
     model = Model(inputs=base_model.input, outputs=output)
@@ -56,7 +56,7 @@ def build_model(learning_rate=None, freeze_base=True):
     # ----- Compile -----
     model.compile(
         optimizer=Adam(learning_rate=learning_rate),
-        loss="binary_crossentropy",
+        loss="categorical_crossentropy",
         metrics=["accuracy"],
     )
 
@@ -66,7 +66,7 @@ def build_model(learning_rate=None, freeze_base=True):
     non_trainable = total_params - trainable
 
     print("\n" + "=" * 60)
-    print(f"  MODEL: MobileNetV2 + Custom Head")
+    print(f"  MODEL: EfficientNetB1 + Custom Head")
     print(f"  Base frozen: {freeze_base}")
     print(f"  Total params:       {total_params:,}")
     print(f"  Trainable params:   {trainable:,}")
@@ -112,7 +112,7 @@ def unfreeze_model(model, fine_tune_at, learning_rate):
     # Recompile với learning rate thấp hơn
     model.compile(
         optimizer=Adam(learning_rate=learning_rate),
-        loss="binary_crossentropy",
+        loss="categorical_crossentropy",
         metrics=["accuracy"],
     )
 

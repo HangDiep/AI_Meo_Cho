@@ -46,10 +46,13 @@ def predict_single(image_path, model=None):
     img_array = np.expand_dims(img_array, axis=0)  # (1, 224, 224, 3)
 
     # Dự đoán
-    prob = model.predict(img_array, verbose=0)[0][0]
-    pred_class = 1 if prob >= DETECTION_CONFIDENCE else 0
+    # Dự đoán
+    predictions = model.predict(img_array, verbose=0)[0]
+
+    pred_class = np.argmax(predictions)
+    confidence = predictions[pred_class]
+
     class_name = CLASS_NAMES[pred_class]
-    confidence = prob if pred_class == 1 else 1 - prob
 
     return class_name, confidence
 

@@ -15,10 +15,16 @@ Cách chạy:
 
 import os
 import sys
-import numpy as np
+import io
+
+# Fix encoding issue on Windows
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import numpy as np
 import tensorflow as tf
 from sklearn.metrics import (
     confusion_matrix,
@@ -55,9 +61,16 @@ def evaluate():
 
     print(f"\n📦 Loading model: {model_path}")
     model = tf.keras.models.load_model(
-    model_path,
-    compile=False
-)
+        model_path,
+        compile=False
+    )
+    
+    # Compile model for evaluation
+    model.compile(
+        optimizer="adam",
+        loss="categorical_crossentropy",
+        metrics=["accuracy"]
+    )
 
     # =================================================================
     # TẠO TEST GENERATOR
@@ -71,12 +84,8 @@ def evaluate():
 
     # Lấy predictions
     y_pred_probs = model.predict(test_gen, verbose=1)
-    y_pred_probs = y_pred_probs.flatten()
-    y_pred = (y_pred_probs >= 0.5).astype(int)
-
-    # Lấy true labels
+    y_pred = np.argmax(y_pred_probs, axis=1)
     y_true = test_gen.classes
-
     # =================================================================
     # 1. TEST ACCURACY & LOSS
     # =================================================================
@@ -96,9 +105,10 @@ def evaluate():
     plot_confusion_matrix(cm, CLASS_NAMES, PLOTS_DIR)
 
     print(f"\nConfusion Matrix:")
-    print(f"  {CLASS_NAMES[0]:>15}  {CLASS_NAMES[1]:>15}  ← Predicted")
-    print(f"  {cm[0][0]:>15}  {cm[0][1]:>15}  | {CLASS_NAMES[0]} (actual)")
-    print(f"  {cm[1][0]:>15}  {cm[1][1]:>15}  | {CLASS_NAMES[1]} (actual)")
+    print(cm)
+    for i, class_name in enumerate(CLASS_NAMES):
+        row_str = " ".join(f"{val:>15}" for val in cm[i])
+        print(f"  {row_str}  | {class_name} (actual)")
 
     # =================================================================
     # 3. CLASSIFICATION REPORT
@@ -114,10 +124,11 @@ def evaluate():
     # =================================================================
     # 4. ROC CURVE & AUC
     # =================================================================
-    fpr, tpr, thresholds = roc_curve(y_true, y_pred_probs)
-    auc_score = auc(fpr, tpr)
-    plot_roc_curve(fpr, tpr, auc_score, PLOTS_DIR)
-    print(f"  AUC Score: {auc_score:.4f}")
+    # fpr, tpr, thresholds = roc_curve(y_true, y_pred_probs)
+    # auc_score = auc(fpr, tpr)
+    # plot_roc_curve(fpr, tpr, auc_score, PLOTS_DIR)
+    #print(f"  AUC Score: {auc_score:.4f}")
+
 
     # =================================================================
     # 5. ẢNH DỰ ĐOÁN ĐÚNG / SAI
@@ -128,8 +139,11 @@ def evaluate():
     test_gen.reset()
     images_batch, labels_batch = next(test_gen)
 
-    batch_preds_probs = model.predict(images_batch, verbose=0).flatten()
-    batch_preds = (batch_preds_probs >= 0.5).astype(int)
+    batch_preds_probs = model.predict(images_batch, verbose=0)
+
+    batch_preds = np.argmax(batch_preds_probs, axis=1)
+
+    labels_batch = np.argmax(labels_batch, axis=1)
 
     # Ảnh dự đoán đúng
     correct_mask = (batch_preds == labels_batch.astype(int))
@@ -139,7 +153,7 @@ def evaluate():
             images_batch[correct_idx],
             labels_batch[correct_idx],
             batch_preds[correct_idx],
-            batch_preds_probs[correct_idx],
+            np.max(batch_preds_probs[correct_idx], axis=1),
             CLASS_NAMES, PLOTS_DIR,
             filename="correct_predictions.png",
         )
@@ -162,6 +176,8 @@ def evaluate():
     # =================================================================
     # 6. BÁO CÁO TỔNG HỢP
     # =================================================================
+    auc_score = 0.0  # Placeholder nếu chưa tính được AUC
+    
     full_report = []
     full_report.append("=" * 60)
     full_report.append("  BÁO CÁO ĐÁNH GIÁ MÔ HÌNH MASK DETECTION")
@@ -172,10 +188,14 @@ def evaluate():
     full_report.append(f"AUC Score:     {auc_score:.4f}")
     full_report.append(f"\n{'─' * 40}")
     full_report.append("Confusion Matrix:")
-    full_report.append(f"  TP (With_mask đúng):    {cm[0][0]}")
-    full_report.append(f"  FN (With_mask sai):     {cm[0][1]}")
-    full_report.append(f"  FP (Without_mask sai):  {cm[1][0]}")
-    full_report.append(f"  TN (Without_mask đúng): {cm[1][1]}")
+    full_report.append(str(cm))
+    full_report.append("")
+    for i, class_name in enumerate(CLASS_NAMES):
+        correct = cm[i][i]
+        total = np.sum(cm[i])
+        incorrect = total - correct
+        pct = (correct / total * 100) if total > 0 else 0.0
+        full_report.append(f"  Class '{class_name}': Correct: {correct}/{total} ({pct:.2f}%), Incorrect: {incorrect}")
     full_report.append(f"\n{'─' * 40}")
     full_report.append("Classification Report:")
     full_report.append(report_str)

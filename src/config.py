@@ -32,14 +32,18 @@ HAARCASCADE_PATH = os.path.join(HAARCASCADE_DIR, "haarcascade_frontalface_defaul
 # CLASSES
 # =============================================================================
 
-CLASS_NAMES = ["With_mask", "Without_mask"]
+CLASS_NAMES = [
+    "incorrect_mask",
+    "With_mask",
+    "Without_mask"
+]  # Thứ tự phải khớp với thư mục con trong dataset
 # Label mapping: 0 = With_mask, 1 = Without_mask (theo thứ tự thư mục)
 
 # =============================================================================
 # TIỀN XỬ LÝ ẢNH
 # =============================================================================
 
-IMG_SIZE = (224, 224)       # Kích thước input cho MobileNetV2
+IMG_SIZE = (224, 224)       # Kích thước input cho EfficientNetB1
 IMG_SHAPE = (224, 224, 3)   # Shape đầy đủ (width, height, channels)
 BATCH_SIZE = 32
 RESCALE = 1.0 / 255        # Chuẩn hóa pixel [0, 255] → [0, 1]
@@ -49,13 +53,14 @@ RESCALE = 1.0 / 255        # Chuẩn hóa pixel [0, 255] → [0, 1]
 # =============================================================================
 
 AUGMENTATION = {
-    "rotation_range": 20,
-    "width_shift_range": 0.2,
-    "height_shift_range": 0.2,
-    "zoom_range": 0.2,
+    "rotation_range": 25,
+    "width_shift_range": 0.15,
+    "height_shift_range": 0.15,
+    "shear_range": 0.15,
+    "zoom_range": 0.15,
     "horizontal_flip": True,
-    "brightness_range": [0.8, 1.2],
-    "fill_mode": "nearest",
+    "brightness_range": [0.4, 1.6],
+    "fill_mode": "nearest"
 }
 
 # =============================================================================
@@ -63,7 +68,7 @@ AUGMENTATION = {
 # =============================================================================
 
 # Transfer Learning base
-BASE_MODEL_NAME = "MobileNetV2"
+BASE_MODEL_NAME = "EfficientNetB1"  # Nâng cấp từ MobileNetV2
 BASE_MODEL_WEIGHTS = "imagenet"
 FREEZE_BASE = True  # Freeze base model ở pha 1
 
@@ -76,23 +81,23 @@ DROPOUT_RATE_2 = 0.3    # Sau Dense layer
 # HUẤN LUYỆN — PHA 1 (Freeze base)
 # =============================================================================
 
-PHASE1_EPOCHS = 15
+PHASE1_EPOCHS = 12  # Giảm từ 15 để tối ưu thời gian
 PHASE1_LEARNING_RATE = 1e-4  # 0.0001
 
 # =============================================================================
 # HUẤN LUYỆN — PHA 2 (Fine-tune)
 # =============================================================================
 
-PHASE2_EPOCHS = 20
-PHASE2_LEARNING_RATE = 1e-5   # 0.00001
+PHASE2_EPOCHS = 15  # Giảm từ 20 để tối ưu thời gian
+PHASE2_LEARNING_RATE = 5e-5   # 0.00005 (tăng từ 1e-5)
 FINE_TUNE_AT = 100             # Unfreeze từ layer thứ 100 trở đi (MobileNetV2 có 155 layers)
 
 # =============================================================================
 # CALLBACKS
 # =============================================================================
 
-EARLY_STOPPING_PATIENCE = 5
-REDUCE_LR_PATIENCE = 3
+EARLY_STOPPING_PATIENCE = 10
+REDUCE_LR_PATIENCE = 4
 REDUCE_LR_FACTOR = 0.5
 MIN_LEARNING_RATE = 1e-7
 
@@ -116,6 +121,7 @@ FRAME_HEIGHT = 480
 # Màu bounding box (BGR format cho OpenCV)
 COLOR_MASK = (0, 255, 0)        # Xanh lá — Có khẩu trang
 COLOR_NO_MASK = (0, 0, 255)     # Đỏ — Không khẩu trang
+COLOR_INCORRECT_MASK = (0, 255, 255)  # Vàng — Đeo sai cách
 FONT = None  # Sẽ dùng cv2.FONT_HERSHEY_SIMPLEX trong code
 
 # =============================================================================

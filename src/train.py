@@ -85,6 +85,16 @@ def train():
         print("\n⚠️  Không có GPU — Sử dụng CPU (sẽ chậm hơn)")
 
     # =================================================================
+    # MIXED PRECISION (chỉ khi có GPU)
+    # =================================================================
+    if gpus:
+        policy = tf.keras.mixed_precision.Policy('mixed_float16')
+        tf.keras.mixed_precision.set_global_policy(policy)
+        print("\n⚡ Mixed Precision (float16) enabled để tối ưu tốc độ")
+    else:
+        print("\n💾 Sử dụng float32 (CPU không support mixed precision)")
+
+    # =================================================================
     # TẠO DATA GENERATORS
     # =================================================================
     print("\n📦 Tạo data generators...")
@@ -109,6 +119,7 @@ def train():
         validation_data=val_gen,
         epochs=PHASE1_EPOCHS,
         callbacks=callbacks_p1,
+        class_weight={0: 1.0, 1: 1.0, 2: 1.4},
     )
 
     # Lưu biểu đồ pha 1
@@ -132,10 +143,11 @@ def train():
     callbacks_p2 = get_callbacks(BEST_MODEL_FINAL, "phase2")
 
     history_p2 = model.fit(
-        train_gen,
+        train_gen, 
         validation_data=val_gen,
         epochs=PHASE2_EPOCHS,
         callbacks=callbacks_p2,
+        class_weight={0: 1.0, 1: 1.0, 2: 1.4},
     )
 
     # =================================================================
