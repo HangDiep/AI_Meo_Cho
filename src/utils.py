@@ -7,12 +7,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import cv2
+from tensorflow.keras.preprocessing.image import img_to_array
 
 
 def get_timestamp():
     """Trả về timestamp dạng string để đặt tên file."""
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
+def preprocess_face(face_img, target_size=(224, 224)):
+    """
+    Tiền xử lý khuôn mặt để đưa vào model.
+    """
+    if face_img is None or face_img.size == 0:
+        return None
+    face = cv2.resize(face_img, target_size)
+    face = face.astype("float32") / 255.0
+    face = img_to_array(face)
+    face = np.expand_dims(face, axis=0)
+    
+    return face
 
 def count_images(directory):
     """

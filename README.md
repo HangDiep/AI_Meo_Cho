@@ -31,4 +31,9 @@ python src/evaluate.py
 # 4. Webcam realtime
 python src/realtime_detect.py
 
+<<<<<<< HEAD
 python app.py # để chạy ra hẳn giao diện 
+
+# 5. Giao diện web upload ảnh
+python -m src.web_upload
+
