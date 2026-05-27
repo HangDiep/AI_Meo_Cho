@@ -200,9 +200,9 @@ def train():
         callbacks=callbacks_p1,
 
         class_weight={
-            0: 1.0,
+            0: 2.0,
             1: 1.0,
-            2: 2.5,
+            2: 1.0,
         },
     )
 
@@ -245,9 +245,9 @@ def train():
         callbacks=callbacks_p2,
 
         class_weight={
-            0: 1.0,
+            0: 1.7,
             1: 1.0,
-            2: 1.8,
+            2: 1.0,
         },
     )
 
