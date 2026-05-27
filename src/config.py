@@ -104,7 +104,7 @@ MIN_LEARNING_RATE = 1e-7
 # MODEL SAVE PATHS
 # =============================================================================
 
-BEST_MODEL_PHASE1 = os.path.join(MODELS_DIR, "best_phase1.keras")
+BEST_MODEL_PHASE1 = None
 BEST_MODEL_FINAL = os.path.join(MODELS_DIR, "best_final.keras")
 TRAINING_HISTORY = os.path.join(MODELS_DIR, "training_history.npy")
 
