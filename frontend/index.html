@@ -116,70 +116,32 @@
 
         <!-- IMAGE UPLOAD -->
         <div class="card p-6">
-
-            <div class="flex justify-between items-center mb-6">
-
+            <h2 class="text-2xl font-bold text-emerald-600 mb-6">Image Upload Detection</h2>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Upload Area -->
                 <div>
-                    <h2 class="text-2xl font-bold text-emerald-600">
-                        Image Detection
-                    </h2>
-
-                    <p class="text-gray-500">
-                        Upload image for AI prediction
-                    </p>
-                </div>
-
-            </div>
-
-            <div class="grid lg:grid-cols-2 gap-6">
-
-                <!-- UPLOAD -->
-                <div>
-
-                    <label class="border-2 border-dashed border-emerald-400 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 transition">
-
-                        <input type="file"
-                               id="uploadImage"
-                               accept="image/*"
-                               class="hidden">
-
-                        <div class="text-6xl mb-4">
-                            📷
-                        </div>
-
-                        <h3 class="font-bold text-lg">
-                            Upload Image
-                        </h3>
-
-                        <p class="text-gray-500 text-sm mt-2">
-                            JPG, PNG supported
-                        </p>
-
+                    <label id="dropZone" class="border-2 border-dashed border-emerald-400 rounded-3xl p-12 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition">
+                        <input type="file" id="imageInput" accept="image/*" class="hidden">
+                        <div class="text-6xl mb-4">📸</div>
+                        <p class="font-semibold text-lg">Click or drop image here</p>
+                        <p class="text-gray-500 text-sm mt-1">JPG, PNG supported</p>
                     </label>
 
-                    <button id="predictBtn"
-                            class="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition">
+                    <button id="predictBtn" 
+                            class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold text-lg transition">
                         ANALYZE IMAGE
                     </button>
-
                 </div>
 
-
-                <!-- PREVIEW -->
+                <!-- Preview & Result -->
                 <div>
-
-                    <img id="previewImage"
-                         class="w-full h-[320px] object-cover rounded-2xl border hidden">
-
-                    <div id="uploadResult"
-                         class="mt-5 bg-gray-50 rounded-2xl p-5 text-lg font-semibold text-center text-gray-700">
-                        No image uploaded
+                    <img id="previewImage" class="w-full h-80 object-cover rounded-3xl border hidden">
+                    <div id="resultBox" class="mt-6 bg-gray-50 rounded-3xl p-6 text-center min-h-[320px] flex items-center justify-center">
+                        <p class="text-gray-400">Upload an image to analyze</p>
                     </div>
-
                 </div>
-
             </div>
-
         </div>
 
     </div>
@@ -247,7 +209,7 @@
 
 
         <!-- IMAGE STATS -->
-        <<div class="card p-6">
+        <div class="card p-6">
 
             <h2 class="text-2xl font-bold text-emerald-600 mb-6">
                 Image Statistics
@@ -346,49 +308,96 @@ stopBtn.onclick = () => {
     predictionEl.innerText = "Camera stopped.";
 };
 
-
-// IMAGE UPLOAD
-const uploadInput = document.getElementById('uploadImage');
-
+// =============== IMAGE UPLOAD ===============
+const imageInput = document.getElementById('imageInput');
 const previewImage = document.getElementById('previewImage');
+const resultBox = document.getElementById('resultBox');
+const predictBtn = document.getElementById('predictBtn');
 
-const uploadResult = document.getElementById('uploadResult');
+let selectedFile = null;
 
-const imageResult = document.getElementById('imageResult');
-
-const imageConfidence = document.getElementById('imageConfidence');
-
-
-uploadInput.addEventListener('change', (e) => {
-
-    const file = e.target.files[0];
-
-    if(file){
-
-        previewImage.src = URL.createObjectURL(file);
-
+imageInput.addEventListener('change', (e) => {
+    selectedFile = e.target.files[0];
+    if (selectedFile) {
+        previewImage.src = URL.createObjectURL(selectedFile);
         previewImage.classList.remove('hidden');
-
-        uploadResult.innerHTML = `
-            Image uploaded successfully
-        `;
+        resultBox.innerHTML = `<p class="text-emerald-600">Ảnh đã tải lên. Nhấn ANALYZE IMAGE để phân tích.</p>`;
     }
 });
 
+predictBtn.addEventListener('click', async () => {
+    if (!selectedFile) {
+        alert("Vui lòng chọn một ảnh trước!");
+        return;
+    }
 
-// DEMO RESULT
-document.getElementById('predictBtn').onclick = () => {
+    resultBox.innerHTML = `
+        <div class="flex justify-center items-center gap-3 text-emerald-600 py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+            <span class="font-semibold">Đang phân tích...</span>
+        </div>`;
 
-    imageResult.innerText = "Mask Detected";
+    const formData = new FormData();
+    formData.append('image', selectedFile);
 
-    imageConfidence.innerText = "98%";
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
 
-    uploadResult.innerHTML = `
-        <div class="text-green-600 text-xl font-bold">
-            Wearing Mask
-        </div>
-    `;
-};
+        const data = await response.json();
+        console.log("Kết quả server:", data);
+
+        if (data.status === "success") {
+
+            // Cập nhật thống kê bên phải
+            let withMask = 0, incorrect = 0, without = 0;
+
+            data.results.forEach(r => {
+                if (r.label.includes("With")) withMask++;
+                else if (r.label.includes("Incorrect")) incorrect++;
+                else without++;
+            });
+
+            document.getElementById('totalPeople').textContent = data.total_faces;
+            document.getElementById('maskCount').textContent = withMask;
+            document.getElementById('wrongMaskCount').textContent = incorrect;
+            document.getElementById('noMaskCount').textContent = without;
+
+            // Hiển thị chi tiết trong resultBox
+            let html = `<p class="text-emerald-700 font-bold text-xl mb-4">✅ Phát hiện ${data.total_faces} khuôn mặt</p>`;
+
+            data.results.forEach(r => {
+                const color = r.label.includes("With") ? "text-green-600" :
+                             r.label.includes("Incorrect") ? "text-amber-600" : "text-red-600";
+                html += `
+                    <div class="flex justify-between bg-white p-3 rounded-2xl mb-2 border">
+                        <span class="font-medium ${color}">${r.label}</span>
+                        <span class="font-bold">${r.confidence}%</span>
+                    </div>`;
+            });
+
+           resultBox.innerHTML = `
+                <div class="text-center">
+                    <p class="text-emerald-600 text-xl font-bold">
+                        ✅ Analysis Completed
+                    </p>
+
+                    <p class="text-gray-500 mt-2">
+                        Results updated in Image Statistics
+                    </p>
+                </div>
+            `;
+
+        } else {
+            resultBox.innerHTML = `<p class="text-red-500">${data.message || "Phân tích thất bại"}</p>`;
+        }
+    } catch (error) {
+        console.error(error);
+        resultBox.innerHTML = `<p class="text-red-500">Lỗi kết nối server. Vui lòng thử lại.</p>`;
+    }
+});
 
 </script>
 

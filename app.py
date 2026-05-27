@@ -14,7 +14,7 @@ from flask import (
 )
 
 from tensorflow.keras.preprocessing.image import img_to_array
-
+from tensorflow.keras.models import load_model
 import src.realtime_detect as realtime_detect
 
 from src.config import (
@@ -101,6 +101,14 @@ def load_model():
 
     return model
 
+# ============================================================
+# INIT
+# ============================================================
+
+download_haarcascade()
+model = load_model()
+face_cascade = cv2.CascadeClassifier(HAARCASCADE_PATH)
+
 
 # ============================================================
 # DECODE BASE64 IMAGE
@@ -130,209 +138,99 @@ def decode_image(data_url):
     except Exception:
 
         return None
+    
+
+# ============================================================
+# UPLOAD IMAGE API (MỚI THÊM)
+# ============================================================
+
+@app.route("/api/upload", methods=["POST"])
+def api_upload():
+    try:
+        if 'image' not in request.files:
+            return jsonify({"status": "error", "message": "Không có file ảnh"}), 400
+
+        file = request.files['image']
+        if file.filename == '':
+            return jsonify({"status": "error", "message": "File rỗng"}), 400
+
+        image_array = np.frombuffer(file.read(), np.uint8)
+        frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+
+        if frame is None:
+            return jsonify({"status": "error", "message": "Không đọc được file ảnh"}), 400
+
+        result = predict_frame(frame, model, face_cascade)
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"❌ Lỗi API Upload: {e}")
+        return jsonify({
+            "status": "error",
+            "message": "Lỗi server khi xử lý ảnh"
+        }), 500
 
 
 # ============================================================
 # PREDICT FRAME
 # ============================================================
 
-def predict_frame(
-    frame,
-    model,
-    face_cascade,
-    use_mediapipe=False,
-    face_detector=None,
-):
+def predict_frame(frame, model, face_cascade):
+    try:
+        if frame is None:
+            return {"status": "error", "message": "Ảnh không hợp lệ"}
 
-    if frame is None:
+        ih, iw = frame.shape[:2]
 
-        return {
-            "status": "error",
-            "message": "Ảnh không hợp lệ",
-        }
-
-    ih, iw = frame.shape[:2]
-
-    faces = []
-
-    # ========================================================
-    # MEDIAPIPE DETECTION
-    # ========================================================
-
-    if use_mediapipe and face_detector is not None:
-
-        rgb = cv2.cvtColor(
-            frame,
-            cv2.COLOR_BGR2RGB
-        )
-
-        results = face_detector.process(rgb)
-
-        if results.detections:
-
-            for d in results.detections:
-
-                box = (
-                    d.location_data
-                    .relative_bounding_box
-                )
-
-                x = int(box.xmin * iw)
-                y = int(box.ymin * ih)
-                w = int(box.width * iw)
-                h = int(box.height * ih)
-
-                x = max(0, x)
-                y = max(0, y)
-
-                w = min(w, iw - x)
-                h = min(h, ih - y)
-
-                if w > 30 and h > 30:
-                    faces.append((x, y, w, h))
-
-    # ========================================================
-    # HAARCASCADE DETECTION
-    # ========================================================
-
-    else:
-
-        gray = cv2.cvtColor(
-            frame,
-            cv2.COLOR_BGR2GRAY
-        )
-
-        detected = face_cascade.detectMultiScale(
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(
             gray,
-            scaleFactor=1.1,
+            scaleFactor=1.05,
             minNeighbors=5,
-            minSize=(60, 60),
+            minSize=(40, 40)
         )
 
-        if len(detected) > 0:
-            faces = list(detected)
+        if len(faces) == 0:
+            return {"status": "no_face", "message": "Không tìm thấy khuôn mặt nào"}
 
-    # ========================================================
-    # NO FACE
-    # ========================================================
+        results = []
 
-    if len(faces) == 0:
+        for (x, y, w, h) in faces:
+            pad = 25
+            face_crop = frame[max(0, y-pad):y+h+pad, max(0, x-pad):x+w+pad]
+
+            if face_crop.size == 0:
+                continue
+
+            face = cv2.resize(face_crop, IMG_SIZE)
+            face = img_to_array(face)
+            face = face.astype("float32") * RESCALE
+            face = np.expand_dims(face, axis=0)
+
+            preds = model.predict(face, verbose=0)[0]
+            class_id = int(np.argmax(preds))
+            confidence = float(preds[class_id])
+
+            label = CLASS_NAMES[class_id]
+
+            results.append({
+                "label": label,
+                "confidence": round(confidence * 100, 2),
+                "box": [int(x), int(y), int(w), int(h)]
+            })
 
         return {
-            "status": "no_face",
-            "message": "Không tìm thấy khuôn mặt",
+            "status": "success",
+            "total_faces": len(faces),
+            "results": results
         }
 
-    # ========================================================
-    # LẤY KHUÔN MẶT ĐẦU TIÊN
-    # ========================================================
-
-    x, y, w, h = faces[0]
-
-    face = frame[y:y+h, x:x+w]
-
-    if face.size == 0:
-
+    except Exception as e:
+        print(f"❌ Lỗi trong predict_frame: {e}")
         return {
             "status": "error",
-            "message": "Không cắt được khuôn mặt",
+            "message": f"Lỗi xử lý ảnh: {str(e)}"
         }
-
-    # ========================================================
-    # PREPROCESS
-    # ========================================================
-
-    face = cv2.resize(
-        face,
-        IMG_SIZE
-    )
-
-    face = img_to_array(face)
-
-    face = face.astype("float32")
-
-    face *= RESCALE
-
-    face = np.expand_dims(face, axis=0)
-
-    # ========================================================
-    # PREDICT
-    # ========================================================
-
-    preds = model.predict(
-        face,
-        verbose=0
-    )[0]
-
-    class_id = int(np.argmax(preds))
-
-    confidence = float(preds[class_id])
-
-    label = CLASS_NAMES[class_id]
-
-    # ========================================================
-    # CONFIDENCE CHECK
-    # ========================================================
-
-    if confidence < DETECTION_CONFIDENCE:
-
-        label = "Không chắc chắn"
-
-    # ========================================================
-    # COLOR
-    # ========================================================
-
-    color = (0, 255, 0)
-
-    if label.lower() == "without_mask":
-        color = (0, 0, 255)
-
-    elif label.lower() == "incorrect_mask":
-        color = (0, 255, 255)
-
-    # ========================================================
-    # DRAW
-    # ========================================================
-
-    cv2.rectangle(
-        frame,
-        (x, y),
-        (x + w, y + h),
-        color,
-        2,
-    )
-
-    text = f"{label}: {confidence * 100:.2f}%"
-
-    cv2.putText(
-        frame,
-        text,
-        (x, y - 10),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.7,
-        color,
-        2,
-    )
-
-    # ========================================================
-    # ENCODE IMAGE
-    # ========================================================
-
-    _, buffer = cv2.imencode(
-        ".jpg",
-        frame
-    )
-
-    image_base64 = base64.b64encode(
-        buffer
-    ).decode("utf-8")
-
-    return {
-        "status": "success",
-        "label": label,
-        "confidence": confidence,
-        "image": image_base64,
-    }
 
 
 # ============================================================
@@ -449,6 +347,8 @@ def api_predict():
     )
 
     return jsonify(result)
+
+
 
 
 # ============================================================
