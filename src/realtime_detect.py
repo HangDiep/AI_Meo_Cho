@@ -24,6 +24,12 @@ from src.config import (
     COLOR_INCORRECT_MASK,
 )
 
+GLOBAL_STATS = {
+    "with_mask": 0,
+    "without_mask": 0,
+    "incorrect_mask": 0,
+    "total": 0
+}
 # =========================================================
 # GLOBAL STATE
 # =========================================================
@@ -177,6 +183,11 @@ def process_frame(frame, model, face_cascade):
         if k not in active_slots:
             del _face_buffers[k]
             _last_preds.pop(k, None)
+
+    GLOBAL_STATS["with_mask"] = mask_count
+    GLOBAL_STATS["without_mask"] = no_mask_count
+    GLOBAL_STATS["incorrect_mask"] = incorrect_count
+    GLOBAL_STATS["total"] = len(faces)
 
     return frame
 

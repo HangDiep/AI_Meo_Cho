@@ -26,7 +26,11 @@ from src.config import (
     DETECTION_CONFIDENCE,
 )
 
-from src.realtime_detect import generate_frames, init_realtime_resources
+from src.realtime_detect import (
+    generate_frames,
+    init_realtime_resources,
+    GLOBAL_STATS
+)
 
 
 # ============================================================
@@ -164,7 +168,19 @@ def api_predict():
         "confidence": confidence
     })
 
+# ============================================================
+# STATS API
+# ============================================================
 
+@app.route("/api/stats")
+def api_stats():
+
+    return jsonify({
+        "with_mask": GLOBAL_STATS["with_mask"],
+        "without_mask": GLOBAL_STATS["without_mask"],
+        "incorrect_mask": GLOBAL_STATS["incorrect_mask"],
+        "total": GLOBAL_STATS["total"]
+    })
 # ============================================================
 # MAIN
 # ============================================================

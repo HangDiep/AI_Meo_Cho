@@ -247,65 +247,63 @@
 
 
         <!-- IMAGE STATS -->
-        <<div class="card p-6">
+        <div class="card p-6">
 
-            <h2 class="text-2xl font-bold text-emerald-600 mb-6">
-                Image Statistics
-            </h2>
+    <h2 class="text-2xl font-bold text-emerald-600 mb-6">
+        Image Statistics
+    </h2>
 
-            <div class="space-y-4">
+    <div class="space-y-4">
 
-                <div class="bg-green-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-green-800">
-                        Wearing Mask
-                    </p>
+        <div class="bg-green-100 p-5 rounded-2xl">
+            <p class="font-semibold text-green-800">
+                Wearing Mask
+            </p>
 
-                    <h3 id="maskCount"
-                        class="text-4xl font-bold text-green-700 mt-2">
-                        0
-                    </h3>
-                </div>
+            <h3 id="imgMaskCount"
+                class="text-4xl font-bold text-green-700 mt-2">
+                0
+            </h3>
+        </div>
 
-                <div class="bg-red-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-red-800">
-                        Without Mask
-                    </p>
+        <div class="bg-red-100 p-5 rounded-2xl">
+            <p class="font-semibold text-red-800">
+                Without Mask
+            </p>
 
-                    <h3 id="noMaskCount"
-                        class="text-4xl font-bold text-red-700 mt-2">
-                        0
-                    </h3>
-                </div>
+            <h3 id="imgNoMaskCount"
+                class="text-4xl font-bold text-red-700 mt-2">
+                0
+            </h3>
+        </div>
 
-                <div class="bg-yellow-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-yellow-800">
-                        Incorrect Mask
-                    </p>
+        <div class="bg-yellow-100 p-5 rounded-2xl">
+            <p class="font-semibold text-yellow-800">
+                Incorrect Mask
+            </p>
 
-                    <h3 id="wrongMaskCount"
-                        class="text-4xl font-bold text-yellow-700 mt-2">
-                        0
-                    </h3>
-                </div>
+            <h3 id="imgWrongMaskCount"
+                class="text-4xl font-bold text-yellow-700 mt-2">
+                0
+            </h3>
+        </div>
 
-                <div class="bg-blue-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-blue-800">
-                        Total People
-                    </p>
+        <div class="bg-blue-100 p-5 rounded-2xl">
+            <p class="font-semibold text-blue-800">
+                Total People
+            </p>
 
-                    <h3 id="totalPeople"
-                        class="text-4xl font-bold text-blue-700 mt-2">
-                        0
-                    </h3>
-                </div>
-
-            </div>
-
+            <h3 id="imgTotalPeople"
+                class="text-4xl font-bold text-blue-700 mt-2">
+                0
+            </h3>
         </div>
 
     </div>
 
 </div>
+
+    </div>
 
 
 
@@ -389,6 +387,37 @@ document.getElementById('predictBtn').onclick = () => {
         </div>
     `;
 };
+// ======================================================
+// REALTIME STATS
+// ======================================================
+
+async function updateStats(){
+
+    try{
+
+        const response = await fetch("/api/stats");
+
+        const data = await response.json();
+
+        document.getElementById("maskCount").innerText =
+            data.with_mask;
+
+        document.getElementById("noMaskCount").innerText =
+            data.without_mask;
+
+        document.getElementById("wrongMaskCount").innerText =
+            data.incorrect_mask;
+
+        document.getElementById("totalPeople").innerText =
+            data.total;
+
+    }catch(err){
+        console.log(err);
+    }
+}
+
+// update every 500ms
+setInterval(updateStats, 500);
 
 </script>
 
