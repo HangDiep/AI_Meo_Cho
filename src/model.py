@@ -35,7 +35,7 @@ def build_model(learning_rate=None, freeze_base=True):
     # ----- Base Model: MobileNetV2 pretrained trên ImageNet -----
     base_model = MobileNetV2(
         weights=BASE_MODEL_WEIGHTS,
-        include_top=False,          # Bỏ classification head gốc
+        include_top=False,          # classification head 
         input_shape=IMG_SHAPE,
     )
 
@@ -44,11 +44,11 @@ def build_model(learning_rate=None, freeze_base=True):
 
     # ----- Classification Head -----
     x = base_model.output
-    x = GlobalAveragePooling2D()(x)     # Giảm chiều từ (7,7,1280) → (1280,)
-    x = Dropout(DROPOUT_RATE_1)(x)      # Chống overfitting
-    x = Dense(DENSE_UNITS, activation="relu")(x)  # Feature extraction
-    x = Dropout(DROPOUT_RATE_2)(x)      # Thêm regularization
-    output = Dense(3, activation="softmax")(x)     # Output: 0, 1, hoặc 2 (3 classes)
+    x = GlobalAveragePooling2D()(x)     # (7,7,1280) → (1280,)
+    x = Dropout(DROPOUT_RATE_1)(x)     
+    x = Dense(DENSE_UNITS, activation="relu")(x)  
+    x = Dropout(DROPOUT_RATE_2)(x)      
+    output = Dense(3, activation="softmax")(x)     
 
     # ----- Tạo Model -----
     model = Model(inputs=base_model.input, outputs=output)
@@ -102,8 +102,6 @@ def unfreeze_model(model, fine_tune_at, learning_rate):
         for layer in base_model.layers[:fine_tune_at]:
             layer.trainable = False
     else:
-        # Trường hợp model bị phẳng hóa khi load từ 
-        # → duyệt trực tiếp trên model.layers
         for layer in model.layers:
             layer.trainable = True
         for layer in model.layers[:fine_tune_at]:

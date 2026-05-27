@@ -182,7 +182,7 @@ def train():
 
     model = build_model(
         learning_rate=PHASE1_LEARNING_RATE,
-        freeze_base=True,
+        freeze_base=True, #V ĐÓNG
     )
 
     callbacks_p1 = get_callbacks(
@@ -264,9 +264,7 @@ def train():
         combined_history[key] = (
 
             history_p1.history[key]
-
             +
-
             history_p2.history[key]
         )
 
