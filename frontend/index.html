@@ -326,6 +326,7 @@ imageInput.addEventListener('change', (e) => {
 });
 
 predictBtn.addEventListener('click', async () => {
+
     if (!selectedFile) {
         alert("Vui lòng chọn một ảnh trước!");
         return;
@@ -335,68 +336,157 @@ predictBtn.addEventListener('click', async () => {
         <div class="flex justify-center items-center gap-3 text-emerald-600 py-8">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
             <span class="font-semibold">Đang phân tích...</span>
-        </div>`;
+        </div>
+    `;
 
     const formData = new FormData();
     formData.append('image', selectedFile);
 
     try {
+
         const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData
         });
 
         const data = await response.json();
-        console.log("Kết quả server:", data);
 
-        if (data.status === "success") {
+        console.log("SERVER RESPONSE:", data);
 
-            // Cập nhật thống kê bên phải
-            let withMask = 0, incorrect = 0, without = 0;
+        // ============================================
+        // ERROR
+        // ============================================
 
-            data.results.forEach(r => {
-                if (r.label.includes("With")) withMask++;
-                else if (r.label.includes("Incorrect")) incorrect++;
-                else without++;
-            });
+        if (data.status !== "success") {
 
-            document.getElementById('totalPeople').textContent = data.total_faces;
-            document.getElementById('maskCount').textContent = withMask;
-            document.getElementById('wrongMaskCount').textContent = incorrect;
-            document.getElementById('noMaskCount').textContent = without;
+            resultBox.innerHTML = `
+                <p class="text-red-500 font-semibold">
+                    ${data.message || "Phân tích thất bại"}
+                </p>
+            `;
 
-            // Hiển thị chi tiết trong resultBox
-            let html = `<p class="text-emerald-700 font-bold text-xl mb-4">✅ Phát hiện ${data.total_faces} khuôn mặt</p>`;
+            return;
+        }
 
-            data.results.forEach(r => {
-                const color = r.label.includes("With") ? "text-green-600" :
-                             r.label.includes("Incorrect") ? "text-amber-600" : "text-red-600";
-                html += `
-                    <div class="flex justify-between bg-white p-3 rounded-2xl mb-2 border">
-                        <span class="font-medium ${color}">${r.label}</span>
-                        <span class="font-bold">${r.confidence}%</span>
-                    </div>`;
-            });
+        // ============================================
+        // UPDATE STATS
+        // ============================================
 
-           resultBox.innerHTML = `
-                <div class="text-center">
-                    <p class="text-emerald-600 text-xl font-bold">
+        let withMask = 0;
+        let incorrectMask = 0;
+        let withoutMask = 0;
+
+        data.results.forEach(r => {
+
+            const label = r.label.toLowerCase();
+
+            if (label.includes("with")) {
+                withMask++;
+            }
+            else if (label.includes("incorrect")) {
+                incorrectMask++;
+            }
+            else {
+                withoutMask++;
+            }
+        });
+
+        document.getElementById('totalPeople').textContent =
+            data.total_faces;
+
+        document.getElementById('maskCount').textContent =
+            withMask;
+
+        document.getElementById('wrongMaskCount').textContent =
+            incorrectMask;
+
+        document.getElementById('noMaskCount').textContent =
+            withoutMask;
+
+        // ============================================
+        // SHOW RESULT IMAGE
+        // ============================================
+
+        if (data.image) {
+
+            previewImage.src =
+                `data:image/jpeg;base64,${data.image}`;
+
+            previewImage.classList.remove('hidden');
+        }
+
+        // ============================================
+        // SHOW RESULT DETAILS
+        // ============================================
+
+        let html = `
+            <div class="space-y-3 w-full">
+
+                <div class="text-center mb-4">
+                    <p class="text-emerald-600 text-2xl font-bold">
                         ✅ Analysis Completed
                     </p>
 
-                    <p class="text-gray-500 mt-2">
-                        Results updated in Image Statistics
+                    <p class="text-gray-500 mt-1">
+                        Detected ${data.total_faces} face(s)
                     </p>
                 </div>
-            `;
+        `;
 
-        } else {
-            resultBox.innerHTML = `<p class="text-red-500">${data.message || "Phân tích thất bại"}</p>`;
-        }
+        data.results.forEach((r, index) => {
+
+            let color = "text-red-600";
+            let bg = "bg-red-50";
+
+            const label = r.label.toLowerCase();
+
+            if (label.includes("with")) {
+                color = "text-green-600";
+                bg = "bg-green-50";
+            }
+            else if (label.includes("incorrect")) {
+                color = "text-yellow-600";
+                bg = "bg-yellow-50";
+            }
+
+            html += `
+                <div class="${bg} rounded-2xl p-4 border flex justify-between items-center">
+
+                    <div>
+                        <p class="font-bold ${color}">
+                            Face ${index + 1}
+                        </p>
+
+                        <p class="text-sm text-gray-600">
+                            ${r.label}
+                        </p>
+                    </div>
+
+                    <div class="text-right">
+                        <p class="text-lg font-bold ${color}">
+                            ${r.confidence}%
+                        </p>
+                    </div>
+
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+
+        resultBox.innerHTML = html;
+
     } catch (error) {
+
         console.error(error);
-        resultBox.innerHTML = `<p class="text-red-500">Lỗi kết nối server. Vui lòng thử lại.</p>`;
+
+        resultBox.innerHTML = `
+            <p class="text-red-500 font-semibold">
+                Lỗi kết nối server. Vui lòng thử lại.
+            </p>
+        `;
     }
+
 });
 
 </script>

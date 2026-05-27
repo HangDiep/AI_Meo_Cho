@@ -8,6 +8,17 @@ Cách chạy:
 
 import os
 import sys
+import io
+
+# Cấu hình encoding UTF-8 tránh UnicodeEncodeError trên Windows console
+if sys.platform == "win32":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    else:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -34,11 +45,12 @@ def predict_single(image_path, model=None):
     """
     # Load model nếu chưa có
     if model is None:
-        model_path = BEST_MODEL_FINAL if os.path.exists(BEST_MODEL_FINAL) else BEST_MODEL_PHASE1
+        if not os.path.exists(BEST_MODEL_FINAL):
+            raise FileNotFoundError(f"Không tìm thấy model tại {BEST_MODEL_FINAL}.")
         model = tf.keras.models.load_model(
-    model_path,
-    compile=False
-)
+            BEST_MODEL_FINAL,
+            compile=False
+        )
 
     # Load và tiền xử lý ảnh
     img = load_img(image_path, target_size=IMG_SIZE)

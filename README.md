@@ -36,3 +36,6 @@ python app.py # để chạy ra hẳn giao diện
 # 5. Giao diện web upload ảnh
 python -m src.web_upload
 
+& "d:\môn AI\Khuau_Trang\venv_new\Scripts\Activate.ps1"
+python src/evaluate.py
+venv/Scripts/python.exe app.py

@@ -6,4 +6,8 @@ matplotlib>=3.6
 scikit-learn>=1.2
 seaborn>=0.12
 Pillow>=9.0
+
+MediaPipe >=0.8.10
+
 gradio>=4.0
+
