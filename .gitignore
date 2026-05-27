@@ -31,3 +31,4 @@ build/
 
 # Log
 *.log
+venv_new

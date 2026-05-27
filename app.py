@@ -1,8 +1,24 @@
 import base64
 import os
+import sys
+import io
+
+# Cấu hình encoding UTF-8 tránh UnicodeEncodeError trên Windows console
+if sys.platform == "win32":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    else:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 import cv2
 import numpy as np
 import tensorflow as tf
+
+import mediapipe as mp
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision as mp_vision
 
 from flask import (
     Flask,
@@ -19,7 +35,6 @@ import src.realtime_detect as realtime_detect
 
 from src.config import (
     BEST_MODEL_FINAL,
-    BEST_MODEL_PHASE1,
     HAARCASCADE_PATH,
     HAARCASCADE_DIR,
     IMG_SIZE,
@@ -82,20 +97,13 @@ def download_haarcascade():
 
 def load_model():
 
-    model_path = (
-        BEST_MODEL_FINAL
-        if os.path.exists(BEST_MODEL_FINAL)
-        else BEST_MODEL_PHASE1
-    )
-
-    if not os.path.exists(model_path):
-
+    if not os.path.exists(BEST_MODEL_FINAL):
         raise FileNotFoundError(
-            "Không tìm thấy model."
+            f"Không tìm thấy model tại {BEST_MODEL_FINAL}."
         )
 
     model = tf.keras.models.load_model(
-        model_path,
+        BEST_MODEL_FINAL,
         compile=False
     )
 
@@ -161,35 +169,18 @@ def predict_frame(
 
     if use_mediapipe and face_detector is not None:
 
-        rgb = cv2.cvtColor(
-            frame,
-            cv2.COLOR_BGR2RGB
-        )
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+        result = face_detector.detect(mp_image)
 
-        results = face_detector.process(rgb)
-
-        if results.detections:
-
-            for d in results.detections:
-
-                box = (
-                    d.location_data
-                    .relative_bounding_box
-                )
-
-                x = int(box.xmin * iw)
-                y = int(box.ymin * ih)
-                w = int(box.width * iw)
-                h = int(box.height * ih)
-
-                x = max(0, x)
-                y = max(0, y)
-
-                w = min(w, iw - x)
-                h = min(h, ih - y)
-
-                if w > 30 and h > 30:
-                    faces.append((x, y, w, h))
+        for detection in result.detections:
+            bbox = detection.bounding_box
+            x = max(0, bbox.origin_x)
+            y = max(0, bbox.origin_y)
+            w = min(bbox.width, iw - x)
+            h = min(bbox.height, ih - y)
+            if w > 30 and h > 30:
+                faces.append((x, y, w, h))
 
     # ========================================================
     # HAARCASCADE DETECTION

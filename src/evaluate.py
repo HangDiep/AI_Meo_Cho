@@ -19,8 +19,12 @@ import io
 
 # Fix encoding issue on Windows
 if sys.platform == "win32":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    else:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -54,9 +58,7 @@ def evaluate():
     # =================================================================
     model_path = BEST_MODEL_FINAL
     if not os.path.exists(model_path):
-        model_path = BEST_MODEL_PHASE1
-    if not os.path.exists(model_path):
-        print("❌ Không tìm thấy model! Hãy chạy train.py trước.")
+        print(f"❌ Không tìm thấy model tại {BEST_MODEL_FINAL}! Hãy chạy train.py trước.")
         return
 
     print(f"\n📦 Loading model: {model_path}")
