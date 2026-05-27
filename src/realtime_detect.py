@@ -3,14 +3,17 @@ import sys
 import cv2
 import numpy as np
 from collections import deque
+from keras.models import load_model
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # =========================================================
 # TENSORFLOW
 # =========================================================
-import tensorflow as tf
-from tensorflow.keras.preprocessing.image import img_to_array
+import keras
+from keras.models import load_model
+from keras.preprocessing.image import img_to_array
+import mediapipe as mp
 
 # =========================================================
 # CONFIG
@@ -29,6 +32,7 @@ from src.config import (
     COLOR_MASK,
     COLOR_NO_MASK,
     COLOR_INCORRECT_MASK,
+    DETECTION_CONFIDENCE,
 )
 
 # =========================================================
@@ -87,22 +91,16 @@ def download_haarcascade():
 def init_realtime_resources():
 
     # =====================================================
-    # CASCADE
+    # MEDIAPIPE
     # =====================================================
-    if not download_haarcascade():
-        raise RuntimeError("Missing Haar Cascade")
-
-    face_cascade = cv2.CascadeClassifier(
-        HAARCASCADE_PATH
+    face_cascade = None
+    face_detector = mp.solutions.face_detection.FaceDetection(
+        model_selection=1,
+        min_detection_confidence=DETECTION_CONFIDENCE
     )
+    use_mediapipe = True
 
-    # =====================================================
-    # NO MEDIAPIPE
-    # =====================================================
-    face_detector = None
-    use_mediapipe = False
-
-    print("[OK] Using Haarcascade")
+    print("[OK] Using MediaPipe FaceDetection")
 
     # =====================================================
     # LOAD MODEL
@@ -110,11 +108,10 @@ def init_realtime_resources():
     model = None
 
     model_candidates = [
-        BEST_MODEL_FINAL,
-        BEST_MODEL_PHASE1,
-        BEST_MODEL_FINAL.replace(".keras", ".h5"),
-        BEST_MODEL_PHASE1.replace(".keras", ".h5"),
-    ]
+    BEST_MODEL_FINAL
+]
+    print("MODEL PATH:", BEST_MODEL_FINAL)
+    print("MODEL EXISTS:", os.path.exists(BEST_MODEL_FINAL))
 
     for model_path in model_candidates:
 
@@ -125,10 +122,11 @@ def init_realtime_resources():
 
             print(f"[*] Loading model: {model_path}")
 
-            model = tf.keras.models.load_model(
-                model_path,
-                compile=False
-            )
+            model = keras.saving.load_model(
+            model_path,
+            compile=False,
+            safe_mode=False
+        )
 
             print("[OK] Model loaded")
 
@@ -175,22 +173,55 @@ def process_frame(
     faces = []
 
     # =====================================================
-    # HAARCASCADE DETECT
+    # MEDIAPIPE DETECT
     # =====================================================
-    gray = cv2.cvtColor(
-        frame,
-        cv2.COLOR_BGR2GRAY
-    )
+    if use_mediapipe and face_detector is not None:
+        rgb_frame = cv2.cvtColor(
+            frame,
+            cv2.COLOR_BGR2RGB
+        )
 
-    detected = face_cascade.detectMultiScale(
-        gray,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(60, 60)
-    )
+        results = face_detector.process(rgb_frame)
 
-    if len(detected) > 0:
-        faces = list(detected)
+        if results.detections:
+            for detection in results.detections:
+                score = 0.0
+                if detection.score:
+                    score = float(detection.score[0])
+
+                if score < DETECTION_CONFIDENCE:
+                    continue
+
+                bbox = detection.location_data.relative_bounding_box
+                x = int(bbox.xmin * frame.shape[1])
+                y = int(bbox.ymin * frame.shape[0])
+                w = int(bbox.width * frame.shape[1])
+                h = int(bbox.height * frame.shape[0])
+
+                x = max(0, x)
+                y = max(0, y)
+                w = max(1, w)
+                h = max(1, h)
+
+                faces.append((x, y, w, h))
+    else:
+        # =====================================================
+        # HAARCASCADE DETECT
+        # =====================================================
+        gray = cv2.cvtColor(
+            frame,
+            cv2.COLOR_BGR2GRAY
+        )
+
+        detected = face_cascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(60, 60)
+        )
+
+        if len(detected) > 0:
+            faces = list(detected)
 
     # =====================================================
     # SORT FACE
@@ -465,7 +496,9 @@ def generate_frames(
         frame = process_frame(
             frame,
             model,
-            face_cascade
+            face_cascade,
+            use_mediapipe,
+            face_detector
         )
 
         ret, buffer = cv2.imencode(
@@ -523,7 +556,9 @@ def run_realtime():
         frame = process_frame(
             frame,
             model,
-            face_cascade
+            face_cascade,
+            use_mediapipe,
+            face_detector
         )
 
         cv2.imshow(

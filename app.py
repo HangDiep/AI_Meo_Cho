@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
+from keras.models import load_model
 
 from flask import (
     Flask,
@@ -94,10 +95,11 @@ def load_model():
             "Không tìm thấy model."
         )
 
-    model = tf.keras.models.load_model(
-        model_path,
-        compile=False
-    )
+    model = load_model(
+    model_path,
+    compile=False,
+    safe_mode=False
+)
 
     return model
 
