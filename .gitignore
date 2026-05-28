@@ -1,18 +1,3 @@
-Facemaskdataset/
-venv/
-__pycache__/
-outputs/
-data/
-
-*.csv
-*.zip
-
-# Model AI
-
-*.h5
-
-*.pt
-*.pth
 
 # Cache
 __pycache__/

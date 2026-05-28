@@ -198,183 +198,93 @@ def predict_frame(
     frame,
     model,
     face_cascade,
-    use_mediapipe=False,
+    use_mediapipe=True,
     face_detector=None,
 ):
 
     try:
-
         if frame is None:
-            return {
-                "status": "error",
-                "message": "Ảnh không hợp lệ"
-            }
+            return {"status": "error", "message": "Ảnh không hợp lệ"}
 
         ih, iw = frame.shape[:2]
-
         faces = []
 
-        # ========================================================
-        # MEDIAPIPE DETECTION
-        # ========================================================
-
+        # ================== 1. MEDIAPIPE (Ưu tiên) ==================
         if use_mediapipe and face_detector is not None:
-
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            
+            detection_result = face_detector.detect(mp_image)
 
-            mp_image = mp.Image(
-                image_format=mp.ImageFormat.SRGB,
-                data=rgb
-            )
-
-            result = face_detector.detect(mp_image)
-
-            if result.detections:
-
-                for detection in result.detections:
-
+            if detection_result.detections:
+                for detection in detection_result.detections:
                     bbox = detection.bounding_box
+                    x = max(0, int(bbox.origin_x))
+                    y = max(0, int(bbox.origin_y))
+                    w = int(bbox.width)
+                    h = int(bbox.height)
 
-                    x = max(0, bbox.origin_x)
-                    y = max(0, bbox.origin_y)
-
-                    w = min(bbox.width, iw - x)
-                    h = min(bbox.height, ih - y)
-
-                    if w > 30 and h > 30:
+                    if w > 45 and h > 45:
                         faces.append((x, y, w, h))
 
-        # ========================================================
-        # HAARCASCADE DETECTION
-        # ========================================================
-
-        else:
-
-            gray = cv2.cvtColor(
-                frame,
-                cv2.COLOR_BGR2GRAY
-            )
-
+        # ================== 2. HAAR CASCADE (Fallback) ==================
+        if len(faces) == 0:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             detected = face_cascade.detectMultiScale(
                 gray,
-                scaleFactor=1.1,
+                scaleFactor=1.02,
                 minNeighbors=4,
-                minSize=(60, 60)
+                minSize=(40, 40)
             )
-
             if len(detected) > 0:
                 faces = list(detected)
 
-        # ========================================================
-        # NO FACE
-        # ========================================================
-
+        # ================== KIỂM TRA KẾT QUẢ ==================
         if len(faces) == 0:
-
-            return {
-                "status": "no_face",
-                "message": "Không tìm thấy khuôn mặt"
-            }
+            return {"status": "no_face", "message": "Không tìm thấy khuôn mặt nào"}
 
         results = []
 
-        # ========================================================
-        # LOOP ALL FACES
-        # ========================================================
-
+        # ================== XỬ LÝ TẤT CẢ KHUÔN MẶT ==================
         for (x, y, w, h) in faces:
-
-            pad = 25
-
+            pad = 32
             x1 = max(0, x - pad)
             y1 = max(0, y - pad)
-
             x2 = min(iw, x + w + pad)
             y2 = min(ih, y + h + pad)
 
             face_crop = frame[y1:y2, x1:x2]
-
             if face_crop.size == 0:
                 continue
 
-            # ====================================================
-            # PREPROCESS
-            # ====================================================
-
-            face = cv2.resize(
-                face_crop,
-                IMG_SIZE
-            )
-
+            # Preprocess
+            face = cv2.resize(face_crop, IMG_SIZE)
             face = img_to_array(face)
-
-            face = face.astype("float32")
-
-            face *= RESCALE
-
+            face = face.astype("float32") * RESCALE
             face = np.expand_dims(face, axis=0)
 
-            # ====================================================
-            # PREDICT
-            # ====================================================
-
-            preds = model.predict(
-                face,
-                verbose=0
-            )[0]
-
+            # Predict
+            preds = model.predict(face, verbose=0)[0]
             class_id = int(np.argmax(preds))
-
             confidence = float(preds[class_id])
 
             label = CLASS_NAMES[class_id]
 
-            # ====================================================
-            # CONFIDENCE CHECK
-            # ====================================================
-
-            if confidence < DETECTION_CONFIDENCE:
+            if confidence < 0.62:
                 label = "Không chắc chắn"
 
-            # ====================================================
-            # COLOR
-            # ====================================================
-
-            color = (0, 255, 0)
-
-            if label.lower() == "without_mask":
+            # Vẽ khung
+            if label == "With_mask":
+                color = (0, 255, 0)
+            elif label == "incorrect_mask":
+                color = (0, 165, 255)
+            else:
                 color = (0, 0, 255)
 
-            elif label.lower() == "incorrect_mask":
-                color = (0, 255, 255)
-
-            # ====================================================
-            # DRAW
-            # ====================================================
-
-            cv2.rectangle(
-                frame,
-                (x, y),
-                (x + w, y + h),
-                color,
-                2
-            )
-
-            text = f"{label}: {confidence * 100:.2f}%"
-
-            cv2.putText(
-                frame,
-                text,
-                (x, y - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                color,
-                2
-            )
-
-            # ====================================================
-            # SAVE RESULT
-            # ====================================================
+            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 4)
+            text = f"{label} {confidence*100:.1f}%"
+            cv2.putText(frame, text, (x, y - 12),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.82, color, 2)
 
             results.append({
                 "label": label,
@@ -382,31 +292,20 @@ def predict_frame(
                 "box": [int(x), int(y), int(w), int(h)]
             })
 
-        # ========================================================
-        # ENCODE IMAGE
-        # ========================================================
-
+        # ================== TRẢ VỀ KẾT QUẢ ==================
         _, buffer = cv2.imencode(".jpg", frame)
-
-        image_base64 = base64.b64encode(
-            buffer
-        ).decode("utf-8")
+        image_base64 = base64.b64encode(buffer).decode("utf-8")
 
         return {
             "status": "success",
-            "total_faces": len(results),
+            "total_faces": len(results),        # Đếm đúng số results
             "results": results,
             "image": image_base64
         }
 
     except Exception as e:
-
-        print(f"❌ Lỗi trong predict_frame: {e}")
-
-        return {
-            "status": "error",
-            "message": f"Lỗi xử lý ảnh: {str(e)}"
-        }
+        print(f"❌ Lỗi predict_frame: {e}")
+        return {"status": "error", "message": f"Lỗi xử lý: {str(e)}"}
 
 
 
