@@ -162,91 +162,20 @@
                     <h3 id="maskCount" class="text-5xl font-bold text-green-700 mt-1">0</h3>
                 </div>
                 <div class="bg-yellow-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-yellow-800">
-                        Incorrect Mask
-                    </p>
-
-                    <h3 id="wrongMaskCount"
-                        class="text-4xl font-bold text-yellow-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-yellow-800">Incorrect Mask</p>
+                    <h3 id="wrongMaskCount" class="text-5xl font-bold text-yellow-700 mt-1">0</h3>
                 </div>
-
-                <div class="bg-blue-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-blue-800">
-                        Total People
-                    </p>
-
-                    <h3 id="totalPeople"
-                        class="text-4xl font-bold text-blue-700 mt-2">
-                        0
-                    </h3>
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- IMAGE STATS -->
-        <<div class="card p-6">
-
-            <h2 class="text-2xl font-bold text-emerald-600 mb-6">
-                Image Statistics
-            </h2>
-
-            <div class="space-y-4">
-
-                <div class="bg-green-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-green-800">
-                        Wearing Mask
-                    </p>
-
-                    <h3 id="maskCount"
-                        class="text-4xl font-bold text-green-700 mt-2">
-                        0
-                    </h3>
-                </div>
-
                 <div class="bg-red-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-red-800">
-                        Without Mask
-                    </p>
-
-                    <h3 id="noMaskCount"
-                        class="text-4xl font-bold text-red-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-red-800">Without Mask</p>
+                    <h3 id="noMaskCount" class="text-5xl font-bold text-red-700 mt-1">0</h3>
                 </div>
-
-                <div class="bg-yellow-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-yellow-800">
-                        Incorrect Mask
-                    </p>
-
-                    <h3 id="wrongMaskCount"
-                        class="text-4xl font-bold text-yellow-700 mt-2">
-                        0
-                    </h3>
-                </div>
-
                 <div class="bg-blue-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-blue-800">
-                        Total People
-                    </p>
-
-                    <h3 id="totalPeople"
-                        class="text-4xl font-bold text-blue-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-blue-800">Total</p>
+                    <h3 id="totalPeople" class="text-5xl font-bold text-blue-700 mt-1">0</h3>
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
 </div>
 
 
@@ -302,27 +231,73 @@ imageInput.addEventListener('change', (e) => {
     if (selectedFile) {
         previewImage.src = URL.createObjectURL(selectedFile);
         previewImage.classList.remove('hidden');
-
-        uploadResult.innerHTML = `
-            Image uploaded successfully
-        `;
+        resultImage.classList.add('hidden');
     }
 });
 
+predictBtn.addEventListener('click', async () => {
+    if (!selectedFile) {
+        alert("Vui lòng chọn ảnh trước!");
+        return;
+    }
 
-// DEMO RESULT
-document.getElementById('predictBtn').onclick = () => {
+    resultBox.innerHTML = `
+        <div class="flex justify-center items-center gap-3 text-emerald-600 py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+            <span>Đang phân tích...</span>
+        </div>`;
 
-    imageResult.innerText = "Mask Detected";
+    const formData = new FormData();
+    formData.append('image', selectedFile);
 
-    imageConfidence.innerText = "98%";
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
 
-    uploadResult.innerHTML = `
-        <div class="text-green-600 text-xl font-bold">
-            Wearing Mask
-        </div>
-    `;
-};
+        const data = await response.json();
+
+        if (data.status === "success") {
+            // Hiển thị ảnh có khung bounding box
+            if (data.image) {
+                resultImage.src = `data:image/jpeg;base64,${data.image}`;
+                resultImage.classList.remove('hidden');
+            }
+
+            // Cập nhật thống kê
+            let withMask = 0, incorrect = 0, without = 0;
+            data.results.forEach(r => {
+                if (r.label.includes("With")) withMask++;
+                else if (r.label.includes("Incorrect")) incorrect++;
+                else without++;
+            });
+
+            document.getElementById('totalPeople').textContent = data.total_faces;
+            document.getElementById('maskCount').textContent = withMask;
+            document.getElementById('wrongMaskCount').textContent = incorrect;
+            document.getElementById('noMaskCount').textContent = without;
+
+            // Chi tiết
+            let html = `<p class="text-xl font-bold text-emerald-700 mb-4">✅ Phát hiện ${data.total_faces} khuôn mặt</p>`;
+            data.results.forEach(r => {
+                const color = r.label.includes("With") ? "text-green-600" : 
+                             r.label.includes("Incorrect") ? "text-amber-600" : "text-red-600";
+                html += `
+                    <div class="flex justify-between bg-white p-4 rounded-2xl border mb-3">
+                        <span class="font-medium ${color}">${r.label}</span>
+                        <span class="font-bold">${r.confidence}%</span>
+                    </div>`;
+            });
+            resultBox.innerHTML = html;
+
+        } else {
+            resultBox.innerHTML = `<p class="text-red-500">${data.message || "Phân tích thất bại"}</p>`;
+        }
+    } catch (err) {
+        resultBox.innerHTML = `<p class="text-red-500">Lỗi kết nối server. Vui lòng thử lại.</p>`;
+    }
+});
 
 </script>
 
