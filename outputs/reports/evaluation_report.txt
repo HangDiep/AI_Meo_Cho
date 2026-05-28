@@ -1,0 +1,23 @@
+============================================================
+BÁO CÁO ĐÁNH GIÁ MÔ HÌNH
+============================================================
+
+Model:
+D:\AI\Khuau_trang\models\best_final.keras
+
+Loss:
+0.5185
+
+Accuracy:
+0.8616 (86.16%)
+
+
+                precision    recall  f1-score   support
+
+incorrect_mask     0.9329    0.7290    0.8185      1107
+     With_mask     0.7476    0.9289    0.8285      1027
+  Without_mask     0.9401    0.9340    0.9370      1075
+
+      accuracy                         0.8616      3209
+     macro avg     0.8736    0.8640    0.8613      3209
+  weighted avg     0.8760    0.8616    0.8614      3209
