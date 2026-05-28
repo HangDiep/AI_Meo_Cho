@@ -28,9 +28,6 @@ LOGS_DIR = os.path.join(BASE_DIR, "outputs", "logs")
 HAARCASCADE_DIR = os.path.join(BASE_DIR, "haarcascade")
 HAARCASCADE_PATH = os.path.join(HAARCASCADE_DIR, "haarcascade_frontalface_default.xml")
 
-# =============================================================================
-# CLASSES
-# =============================================================================
 
 CLASS_NAMES = [
     "incorrect_mask",
@@ -97,15 +94,11 @@ REDUCE_LR_PATIENCE = 4
 REDUCE_LR_FACTOR = 0.5
 MIN_LEARNING_RATE = 1e-7
 
-# =============================================================================
-# MODEL SAVE PATHS
-# =============================================================================
 
 BEST_MODEL_PHASE1 = None
 BEST_MODEL_FINAL = os.path.join(MODELS_DIR, "best_final.keras")
 TRAINING_HISTORY = os.path.join(MODELS_DIR, "training_history.npy")
 
-# MediaPipe Tasks face detection model (MediaPipe >= 0.10)
 MEDIAPIPE_FACE_MODEL = os.path.join(MODELS_DIR, "blaze_face_short_range.tflite")
 
 # =============================================================================
@@ -120,12 +113,10 @@ FRAME_HEIGHT = 480
 # Màu bounding box (BGR format cho OpenCV)
 COLOR_MASK = (0, 255, 0)        # Xanh lá — Có khẩu trang
 COLOR_NO_MASK = (0, 0, 255)     # Đỏ — Không khẩu trang
-COLOR_INCORRECT_MASK = (0, 255, 255)  # Vàng — Đeo sai cách
-FONT = None  # Sẽ dùng cv2.FONT_HERSHEY_SIMPLEX trong code
+COLOR_INCORRECT_MASK = (0, 255, 255)  # Vàng 
+FONT = None  # 
 
-# =============================================================================
-# TẠO THƯ MỤC NẾU CHƯA TỒN TẠI
-# =============================================================================
+
 
 for dir_path in [MODELS_DIR, PLOTS_DIR, REPORTS_DIR, LOGS_DIR, HAARCASCADE_DIR]:
     os.makedirs(dir_path, exist_ok=True)

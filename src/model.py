@@ -22,12 +22,7 @@ def build_model(learning_rate=None, freeze_base=True):
     """
     Xây dựng model MobileNetV2 + Classification Head.
 
-    Args:
-        learning_rate: Learning rate cho optimizer. Mặc định dùng từ config.
-        freeze_base: True = freeze toàn bộ base model (pha 1).
-
-    Returns:
-        tf.keras.Model: Model đã compile, sẵn sàng train.
+    Pha 1
     """
     if learning_rate is None:
         learning_rate = PHASE1_LEARNING_RATE
@@ -80,13 +75,6 @@ def build_model(learning_rate=None, freeze_base=True):
 def unfreeze_model(model, fine_tune_at, learning_rate):
     """
     Unfreeze một phần base model để fine-tune (pha 2).
-
-    Args:
-        model: Model đã train ở pha 1.
-        fine_tune_at: Unfreeze từ layer index này trở đi.
-        learning_rate: Learning rate mới (thường rất nhỏ).
-
-    Returns:
         Model đã recompile, sẵn sàng cho pha 2.
         """
     # Tìm base model (MobileNetV2) trong các layers
@@ -97,7 +85,7 @@ def unfreeze_model(model, fine_tune_at, learning_rate):
             break
 
     if base_model is not None:
-        # Trường hợp model giữ nguyên cấu trúc (sub-model MobileNetV2 tồn tại)
+        # cập nhật trọng số
         base_model.trainable = True
         for layer in base_model.layers[:fine_tune_at]:
             layer.trainable = False
