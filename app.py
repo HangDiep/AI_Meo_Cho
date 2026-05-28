@@ -1,22 +1,10 @@
-import base64
-import os
-import sys
-import io
-
-# Cấu hình encoding UTF-8 tránh UnicodeEncodeError trên Windows console
-if sys.platform == "win32":
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
-    else:
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
-
 import cv2
 import numpy as np
 import tensorflow as tf
-
 import mediapipe as mp
+import base64
+import os
+
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision as mp_vision
 
@@ -46,19 +34,18 @@ from src.config import (
 # ============================================================
 # FLASK APP
 # ============================================================
-
 app = Flask(
     __name__,
     static_folder="frontend",
     static_url_path=""
 )
 
+from src.shared_state import webcam_stats
+
 # ============================================================
 # DOWNLOAD HAARCASCADE
 # ============================================================
-
 def download_haarcascade():
-
     if os.path.exists(HAARCASCADE_PATH):
         return True
 
@@ -73,30 +60,20 @@ def download_haarcascade():
     )
 
     if os.path.exists(cascade_src):
-
         import shutil
 
-        os.makedirs(
-            HAARCASCADE_DIR,
-            exist_ok=True
-        )
+        os.makedirs(HAARCASCADE_DIR, exist_ok=True)
 
-        shutil.copy2(
-            cascade_src,
-            HAARCASCADE_PATH
-        )
+        shutil.copy2(cascade_src, HAARCASCADE_PATH)
 
         return True
 
     return False
 
 
-
-
 # ============================================================
 # LOAD MODEL
 # ============================================================
-
 def load_model():
 
     if not os.path.exists(BEST_MODEL_FINAL):
@@ -115,20 +92,15 @@ def load_model():
 # ============================================================
 # DECODE BASE64 IMAGE
 # ============================================================
-
 def decode_image(data_url):
 
     if data_url.startswith("data:"):
         _, data_url = data_url.split(",", 1)
 
     try:
-
         image_data = base64.b64decode(data_url)
 
-        image_array = np.frombuffer(
-            image_data,
-            np.uint8
-        )
+        image_array = np.frombuffer(image_data, np.uint8)
 
         image = cv2.imdecode(
             image_array,
@@ -138,52 +110,67 @@ def decode_image(data_url):
         return image
 
     except Exception:
-
         return None
 
 
 # ============================================================
-# UPLOAD IMAGE API (MỚI THÊM)
+# UPLOAD IMAGE API
 # ============================================================
-
 @app.route("/api/upload", methods=["POST"])
 def api_upload():
+
     try:
-        if 'image' not in request.files:
-            return jsonify({"status": "error", "message": "Không có file ảnh"}), 400
 
-        file = request.files['image']
-        if file.filename == '':
-            return jsonify({"status": "error", "message": "File rỗng"}), 400
+        if "image" not in request.files:
+            return jsonify({
+                "status": "error",
+                "message": "Không có file ảnh"
+            }), 400
 
-        image_array = np.frombuffer(file.read(), np.uint8)
-        frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+        file = request.files["image"]
+
+        if file.filename == "":
+            return jsonify({
+                "status": "error",
+                "message": "File rỗng"
+            }), 400
+
+        image_array = np.frombuffer(
+            file.read(),
+            np.uint8
+        )
+
+        frame = cv2.imdecode(
+            image_array,
+            cv2.IMREAD_COLOR
+        )
 
         if frame is None:
-            return jsonify({"status": "error", "message": "Không đọc được file ảnh"}), 400
+            return jsonify({
+                "status": "error",
+                "message": "Không đọc được file ảnh"
+            }), 400
 
         result = predict_frame(
-
             frame,
-
             app.config["MODEL"],
-
             app.config["FACE_CASCADE"],
-
             use_mediapipe=app.config.get(
                 "USE_MEDIAPIPE",
                 False
             ),
-
             face_detector=app.config.get(
                 "FACE_DETECTOR",
                 None
             ),
         )
+
         return jsonify(result)
 
     except Exception as e:
+
         print(f"❌ Lỗi API Upload: {e}")
+
         return jsonify({
             "status": "error",
             "message": "Lỗi server khi xử lý ảnh"
@@ -193,7 +180,6 @@ def api_upload():
 # ============================================================
 # PREDICT FRAME
 # ============================================================
-
 def predict_frame(
     frame,
     model,
@@ -217,10 +203,12 @@ def predict_frame(
         # ========================================================
         # MEDIAPIPE DETECTION
         # ========================================================
-
         if use_mediapipe and face_detector is not None:
 
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            rgb = cv2.cvtColor(
+                frame,
+                cv2.COLOR_BGR2RGB
+            )
 
             mp_image = mp.Image(
                 image_format=mp.ImageFormat.SRGB,
@@ -238,8 +226,15 @@ def predict_frame(
                     x = max(0, bbox.origin_x)
                     y = max(0, bbox.origin_y)
 
-                    w = min(bbox.width, iw - x)
-                    h = min(bbox.height, ih - y)
+                    w = min(
+                        bbox.width,
+                        iw - x
+                    )
+
+                    h = min(
+                        bbox.height,
+                        ih - y
+                    )
 
                     if w > 30 and h > 30:
                         faces.append((x, y, w, h))
@@ -247,7 +242,6 @@ def predict_frame(
         # ========================================================
         # HAARCASCADE DETECTION
         # ========================================================
-
         else:
 
             gray = cv2.cvtColor(
@@ -268,20 +262,30 @@ def predict_frame(
         # ========================================================
         # NO FACE
         # ========================================================
-
         if len(faces) == 0:
+
+            webcam_stats["with_mask"] = 0
+            webcam_stats["without_mask"] = 0
+            webcam_stats["incorrect_mask"] = 0
+            webcam_stats["total_people"] = 0
 
             return {
                 "status": "no_face",
                 "message": "Không tìm thấy khuôn mặt"
             }
 
+        # ========================================================
+        # COUNTER
+        # ========================================================
+        with_mask_count = 0
+        without_mask_count = 0
+        incorrect_mask_count = 0
+
         results = []
 
         # ========================================================
         # LOOP ALL FACES
         # ========================================================
-
         for (x, y, w, h) in faces:
 
             pad = 25
@@ -300,7 +304,6 @@ def predict_frame(
             # ====================================================
             # PREPROCESS
             # ====================================================
-
             face = cv2.resize(
                 face_crop,
                 IMG_SIZE
@@ -312,12 +315,14 @@ def predict_frame(
 
             face *= RESCALE
 
-            face = np.expand_dims(face, axis=0)
+            face = np.expand_dims(
+                face,
+                axis=0
+            )
 
             # ====================================================
             # PREDICT
             # ====================================================
-
             preds = model.predict(
                 face,
                 verbose=0
@@ -330,16 +335,28 @@ def predict_frame(
             label = CLASS_NAMES[class_id]
 
             # ====================================================
+            # COUNT
+            # ====================================================
+            label_lower = label.lower()
+
+            if label_lower == "with_mask":
+                with_mask_count += 1
+
+            elif label_lower == "without_mask":
+                without_mask_count += 1
+
+            elif label_lower == "incorrect_mask":
+                incorrect_mask_count += 1
+
+            # ====================================================
             # CONFIDENCE CHECK
             # ====================================================
-
             if confidence < DETECTION_CONFIDENCE:
                 label = "Không chắc chắn"
 
             # ====================================================
             # COLOR
             # ====================================================
-
             color = (0, 255, 0)
 
             if label.lower() == "without_mask":
@@ -349,9 +366,8 @@ def predict_frame(
                 color = (0, 255, 255)
 
             # ====================================================
-            # DRAW
+            # DRAW BOX
             # ====================================================
-
             cv2.rectangle(
                 frame,
                 (x, y),
@@ -375,18 +391,35 @@ def predict_frame(
             # ====================================================
             # SAVE RESULT
             # ====================================================
-
             results.append({
                 "label": label,
-                "confidence": round(confidence * 100, 2),
-                "box": [int(x), int(y), int(w), int(h)]
+                "confidence": round(
+                    confidence * 100,
+                    2
+                ),
+                "box": [
+                    int(x),
+                    int(y),
+                    int(w),
+                    int(h)
+                ]
             })
+
+        # ========================================================
+        # UPDATE REALTIME STATS
+        # ========================================================
+        webcam_stats["with_mask"] = with_mask_count
+        webcam_stats["without_mask"] = without_mask_count
+        webcam_stats["incorrect_mask"] = incorrect_mask_count
+        webcam_stats["total_people"] = len(results)
 
         # ========================================================
         # ENCODE IMAGE
         # ========================================================
-
-        _, buffer = cv2.imencode(".jpg", frame)
+        _, buffer = cv2.imencode(
+            ".jpg",
+            frame
+        )
 
         image_base64 = base64.b64encode(
             buffer
@@ -409,12 +442,9 @@ def predict_frame(
         }
 
 
-
-
 # ============================================================
 # ROUTES
 # ============================================================
-
 @app.route("/")
 def index():
     return send_from_directory(
@@ -431,94 +461,72 @@ def about():
     )
 
 
+# ============================================================
+# API STATS
+# ============================================================
+@app.route("/api/stats")
+def api_stats():
+    return jsonify(webcam_stats)
+
 
 # ============================================================
 # VIDEO STREAM
 # ============================================================
-
 @app.route("/video_feed")
 def video_feed():
 
     return Response(
-
         stream_with_context(
-
             realtime_detect.generate_frames(
-
                 app.config["MODEL"],
-
                 app.config["FACE_CASCADE"],
-
                 use_mediapipe=app.config.get(
                     "USE_MEDIAPIPE",
                     False
                 ),
-
                 face_detector=app.config.get(
                     "FACE_DETECTOR",
                     None
                 ),
             )
         ),
-
-        mimetype=(
-            "multipart/x-mixed-replace;"
-            " boundary=frame"
-        ),
+        mimetype="multipart/x-mixed-replace; boundary=frame"
     )
 
 
 # ============================================================
 # API PREDICT
 # ============================================================
-
 @app.route("/api/predict", methods=["POST"])
 def api_predict():
 
-    payload = request.get_json(
-        force=True
-    )
+    payload = request.get_json(force=True)
 
     if (
-        not payload
-        or "image" not in payload
+        not payload or
+        "image" not in payload
     ):
-
         return jsonify({
-
             "status": "error",
-
             "message": "Thiếu image"
-
         }), 400
 
-    frame = decode_image(
-        payload["image"]
-    )
+    frame = decode_image(payload["image"])
 
     if frame is None:
-
         return jsonify({
-
             "status": "error",
-
             "message": "Không decode được ảnh"
-
         }), 400
 
     result = predict_frame(
-
         frame,
-
         app.config["MODEL"],
-
         app.config["FACE_CASCADE"],
-
         use_mediapipe=app.config.get(
             "USE_MEDIAPIPE",
             False
         ),
-
         face_detector=app.config.get(
             "FACE_DETECTOR",
             None
@@ -531,7 +539,6 @@ def api_predict():
 # ============================================================
 # MAIN
 # ============================================================
-
 if __name__ == "__main__":
 
     print("\n🚀 Khởi tạo realtime detection...")
@@ -544,11 +551,8 @@ if __name__ == "__main__":
     ) = realtime_detect.init_realtime_resources()
 
     app.config["MODEL"] = model
-
     app.config["FACE_CASCADE"] = face_cascade
-
     app.config["USE_MEDIAPIPE"] = use_mediapipe
-
     app.config["FACE_DETECTOR"] = face_detector
 
     print("\n✅ Flask server running...")

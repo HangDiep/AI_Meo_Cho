@@ -15,6 +15,7 @@ from tensorflow.keras.preprocessing.image import img_to_array
 # =========================================================
 # CONFIG
 # =========================================================
+from src.shared_state import webcam_stats
 from src.config import (
     BEST_MODEL_FINAL,
     HAARCASCADE_PATH,
@@ -267,6 +268,13 @@ def process_frame(
 
     cv2.putText(frame, f"Incorrect: {incorrect_count}", (10, 120),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_INCORRECT_MASK, 2)
+    # =====================================================
+# UPDATE GLOBAL STATS
+# =====================================================
+    webcam_stats["with_mask"] = mask_count
+    webcam_stats["without_mask"] = no_mask_count
+    webcam_stats["incorrect_mask"] = incorrect_count
+    webcam_stats["total_people"] = len(faces)
 
     return frame
 

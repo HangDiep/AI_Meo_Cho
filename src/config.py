@@ -28,29 +28,18 @@ LOGS_DIR = os.path.join(BASE_DIR, "outputs", "logs")
 HAARCASCADE_DIR = os.path.join(BASE_DIR, "haarcascade")
 HAARCASCADE_PATH = os.path.join(HAARCASCADE_DIR, "haarcascade_frontalface_default.xml")
 
-# =============================================================================
-# CLASSES
-# =============================================================================
+
 
 CLASS_NAMES = [
     "incorrect_mask",
     "With_mask",
     "Without_mask"
-]  # Thứ tự phải khớp với thư mục con trong dataset
+]  #===================
 
-
-# =============================================================================
-# TIỀN XỬ LÝ ẢNH
-# =============================================================================
-
-IMG_SIZE = (224, 224)       # Kích thước input cho EfficientNetB1
-IMG_SHAPE = (224, 224, 3)   # Shape đầy đủ (width, height, channels)
+IMG_SIZE = (224, 224)      
+IMG_SHAPE = (224, 224, 3)  
 BATCH_SIZE = 32
-RESCALE = 1.0 / 255        # Chuẩn hóa pixel [0, 255] → [0, 1]
-
-# =============================================================================
-# DATA AUGMENTATION (chỉ áp dụng cho tập train)
-# =============================================================================
+RESCALE = 1.0 / 255       
 
 AUGMENTATION = {
     "rotation_range": 45,        # Tăng từ 25 → 45 độ (cover góc nghiêng nhiều hơn)
@@ -63,64 +52,47 @@ AUGMENTATION = {
     "fill_mode": "nearest"
 }
 
-# =============================================================================
-# MÔ HÌNH
-# =============================================================================
-
-# Transfer Learning base
-BASE_MODEL_NAME = "MobileNetV2"  # Nâng cấp từ MobileNetV2
+BASE_MODEL_NAME = "MobileNetV2" 
 BASE_MODEL_WEIGHTS = "imagenet"
-FREEZE_BASE = True  # Freeze base model ở pha 1
+FREEZE_BASE = True  
 
 # Classification Head
 DENSE_UNITS = 128
-DROPOUT_RATE_1 = 0.5    # Sau GlobalAveragePooling2D
-DROPOUT_RATE_2 = 0.3    # Sau Dense layer
-# =============================================================================
-# HUẤN LUYỆN — PHA 1 (Freeze base)
-# =============================================================================
+DROPOUT_RATE_1 = 0.5    
+DROPOUT_RATE_2 = 0.3    
 
-PHASE1_EPOCHS = 14  # Giảm từ 15 để tối ưu thời gian
-PHASE1_LEARNING_RATE = 1e-4  # 0.0001
 
-# =============================================================================
-# HUẤN LUYỆN — PHA 2 (Fine-tune)
-# ===============1=============================================================
+PHASE1_EPOCHS = 14  
+PHASE1_LEARNING_RATE = 1e-4  #0.0001
 
-PHASE2_EPOCHS = 18  # Giảm từ 20 để tối ưu thời gian
+
+
+PHASE2_EPOCHS = 18  
 PHASE2_LEARNING_RATE = 1e-5   # 0.00005 (tăng từ 1e-5)
-FINE_TUNE_AT = 130           # Unfreeze từ layer thứ 100 trở đi (MobileNetV2 có 155 layers)
-
-# =============================================================================
-# CALLBACKS
-# =============================================================================
+FINE_TUNE_AT = 130           
 
 EARLY_STOPPING_PATIENCE = 10
 REDUCE_LR_PATIENCE = 4
 REDUCE_LR_FACTOR = 0.5
 MIN_LEARNING_RATE = 1e-7
 
-# =============================================================================
-# MODEL SAVE PATHS
-# =============================================================================
 
-BEST_MODEL_PHASE1 = None
+
+BEST_MODEL_PHASE1 = os.path.join(MODELS_DIR, "best_phase1.keras")
 BEST_MODEL_FINAL = os.path.join(MODELS_DIR, "best_final.keras")
 TRAINING_HISTORY = os.path.join(MODELS_DIR, "training_history.npy")
 
 # MediaPipe Tasks face detection model (MediaPipe >= 0.10)
 MEDIAPIPE_FACE_MODEL = os.path.join(MODELS_DIR, "blaze_face_short_range.tflite")
 
-# =============================================================================
-# REALTIME DETECTION
-# =============================================================================
 
-WEBCAM_INDEX = 0            # 0 = webcam mặc định
+
+WEBCAM_INDEX = 0           
 DETECTION_CONFIDENCE = 0.6  # Ngưỡng tin cậy để hiển thị label
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
-# Màu bounding box (BGR format cho OpenCV)
+
 COLOR_MASK = (0, 255, 0)        # Xanh lá — Có khẩu trang
 COLOR_NO_MASK = (0, 0, 255)     # Đỏ — Không khẩu trang
 COLOR_INCORRECT_MASK = (0, 255, 255)  # Vàng — Đeo sai cách

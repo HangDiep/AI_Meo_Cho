@@ -1,59 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Mask Detection System</title>
+<script src="https://cdn.tailwindcss.com"></script>
 
-    <title>AI Mask Detection System</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <style>
-        body{
-            background:#faf8ff;
-            font-family: Inter, sans-serif;
-            overflow-x: hidden;
-        }
-
-        .glass{
-            background: rgba(255,255,255,0.72);
-            backdrop-filter: blur(12px);
-        }
-
-        .card{
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-
-        .live-glow{
-            box-shadow: 0 0 20px rgba(16,185,129,0.2);
-        }
-    </style>
+<style>
+body{
+    background:#faf8ff;
+    font-family: Inter, sans-serif;
+    overflow-x: hidden;
+}
+.glass{
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(12px);
+}
+.card{
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+.live-glow{
+    box-shadow: 0 0 20px rgba(16,185,129,0.2);
+}
+</style>
 </head>
 
 <body>
 
 <!-- HEADER -->
 <header class="bg-emerald-600 text-white px-8 py-5 flex justify-between items-center shadow-lg">
-
     <div>
-        <h1 class="text-3xl font-bold tracking-wide">
-            AI MASK DETECTION
-        </h1>
-
-        <p class="text-sm opacity-80 mt-1">
-            Real-time Face Mask Monitoring System
-        </p>
+        <h1 class="text-3xl font-bold tracking-wide">AI MASK DETECTION</h1>
+        <p class="text-sm opacity-80 mt-1">Real-time Face Mask Monitoring System</p>
     </div>
-
-    <a href="/about"
-       class="bg-white/20 hover:bg-white/30 px-5 py-3 rounded-xl font-semibold transition">
+    <a href="/about" class="bg-white/20 hover:bg-white/30 px-5 py-3 rounded-xl font-semibold transition">
         About Project
     </a>
-
 </header>
-
 
 <!-- MAIN -->
 <div class="grid xl:grid-cols-3 gap-6 p-6">
@@ -65,270 +50,234 @@
         <div class="card overflow-hidden">
 
             <div class="bg-emerald-500 px-6 py-4 text-white flex justify-between items-center">
-
                 <div>
-                    <h2 class="text-2xl font-bold">
-                        Realtime Camera Detection
-                    </h2>
-
-                    <p class="text-sm opacity-80">
-                        AI Webcam Monitoring
-                    </p>
+                    <h2 class="text-2xl font-bold">Realtime Camera Detection</h2>
+                    <p class="text-sm opacity-80">AI Webcam Monitoring</p>
                 </div>
 
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full bg-green-300 animate-pulse"></div>
-
-                    <span class="font-semibold">
-                        LIVE
-                    </span>
+                    <span class="font-semibold" id="cameraStatus">OFFLINE</span>
                 </div>
-
             </div>
 
             <div class="relative live-glow">
-
-                <img id="webcamStream"
-                     src=""
-                     class="w-full h-[600px] object-cover bg-black">
-
-                
-
+                <img id="webcamStream" src="" class="w-full h-[600px] object-cover bg-black">
             </div>
 
-            <!-- BUTTON -->
             <div class="p-5 flex gap-4">
-
                 <button id="startCameraBtn"
-                        class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition">
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition">
                     START CAMERA
                 </button>
 
                 <button id="stopCameraBtn"
-                        class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold transition">
+                    class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold transition">
                     STOP CAMERA
                 </button>
-
             </div>
 
         </div>
 
-
         <!-- IMAGE UPLOAD -->
         <div class="card p-6">
             <h2 class="text-2xl font-bold text-emerald-600 mb-6">Image Upload Detection</h2>
-            
+
             <div class="grid md:grid-cols-2 gap-6">
-                <!-- Upload Area -->
+
+                <!-- Upload -->
                 <div>
-                    <label id="dropZone" class="border-2 border-dashed border-emerald-400 rounded-3xl p-12 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition">
+                    <label class="border-2 border-dashed border-emerald-400 rounded-3xl p-12 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition">
                         <input type="file" id="imageInput" accept="image/*" class="hidden">
                         <div class="text-6xl mb-4">📸</div>
                         <p class="font-semibold text-lg">Click or drop image here</p>
                         <p class="text-gray-500 text-sm mt-1">JPG, PNG supported</p>
                     </label>
 
-                    <button id="predictBtn" 
-                            class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold text-lg transition">
+                    <button id="predictBtn"
+                        class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold text-lg transition">
                         ANALYZE IMAGE
                     </button>
                 </div>
 
-                <!-- Preview & Result -->
+                <!-- Preview -->
                 <div>
                     <img id="previewImage" class="w-full h-80 object-cover rounded-3xl border hidden">
-                    <div id="resultBox" class="mt-6 bg-gray-50 rounded-3xl p-6 text-center min-h-[320px] flex items-center justify-center">
+
+                    <div id="resultBox"
+                        class="mt-6 bg-gray-50 rounded-3xl p-6 text-center min-h-[320px] flex items-center justify-center">
                         <p class="text-gray-400">Upload an image to analyze</p>
                     </div>
                 </div>
+
             </div>
         </div>
 
     </div>
-
 
     <!-- RIGHT -->
     <div class="space-y-6">
 
         <!-- WEBCAM STATS -->
         <div class="card p-6">
-
-            <h2 class="text-2xl font-bold text-emerald-600 mb-6">
-                Webcam Statistics
-            </h2>
+            <h2 class="text-2xl font-bold text-emerald-600 mb-6">Webcam Statistics</h2>
 
             <div class="space-y-4">
-
                 <div class="bg-green-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-green-800">
-                        Wearing Mask
-                    </p>
-
-                    <h3 id="maskCount"
-                        class="text-4xl font-bold text-green-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-green-800">Wearing Mask</p>
+                    <h3 id="maskCountWebcam" class="text-4xl font-bold text-green-700 mt-2">0</h3>
                 </div>
 
                 <div class="bg-red-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-red-800">
-                        Without Mask
-                    </p>
-
-                    <h3 id="noMaskCount"
-                        class="text-4xl font-bold text-red-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-red-800">Without Mask</p>
+                    <h3 id="noMaskCountWebcam" class="text-4xl font-bold text-red-700 mt-2">0</h3>
                 </div>
 
                 <div class="bg-yellow-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-yellow-800">
-                        Incorrect Mask
-                    </p>
-
-                    <h3 id="wrongMaskCount"
-                        class="text-4xl font-bold text-yellow-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-yellow-800">Incorrect Mask</p>
+                    <h3 id="wrongMaskCountWebcam" class="text-4xl font-bold text-yellow-700 mt-2">0</h3>
                 </div>
 
                 <div class="bg-blue-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-blue-800">
-                        Total People
-                    </p>
-
-                    <h3 id="totalPeople"
-                        class="text-4xl font-bold text-blue-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-blue-800">Total People</p>
+                    <h3 id="totalPeopleWebcam" class="text-4xl font-bold text-blue-700 mt-2">0</h3>
                 </div>
-
             </div>
-
         </div>
-
 
         <!-- IMAGE STATS -->
         <div class="card p-6">
-
-            <h2 class="text-2xl font-bold text-emerald-600 mb-6">
-                Image Statistics
-            </h2>
+            <h2 class="text-2xl font-bold text-emerald-600 mb-6">Image Statistics</h2>
 
             <div class="space-y-4">
-
                 <div class="bg-green-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-green-800">
-                        Wearing Mask
-                    </p>
-
-                    <h3 id="maskCount"
-                        class="text-4xl font-bold text-green-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-green-800">Wearing Mask</p>
+                    <h3 id="maskCount" class="text-4xl font-bold text-green-700 mt-2">0</h3>
                 </div>
 
                 <div class="bg-red-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-red-800">
-                        Without Mask
-                    </p>
-
-                    <h3 id="noMaskCount"
-                        class="text-4xl font-bold text-red-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-red-800">Without Mask</p>
+                    <h3 id="noMaskCount" class="text-4xl font-bold text-red-700 mt-2">0</h3>
                 </div>
 
                 <div class="bg-yellow-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-yellow-800">
-                        Incorrect Mask
-                    </p>
-
-                    <h3 id="wrongMaskCount"
-                        class="text-4xl font-bold text-yellow-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-yellow-800">Incorrect Mask</p>
+                    <h3 id="wrongMaskCount" class="text-4xl font-bold text-yellow-700 mt-2">0</h3>
                 </div>
 
                 <div class="bg-blue-100 p-5 rounded-2xl">
-                    <p class="font-semibold text-blue-800">
-                        Total People
-                    </p>
-
-                    <h3 id="totalPeople"
-                        class="text-4xl font-bold text-blue-700 mt-2">
-                        0
-                    </h3>
+                    <p class="font-semibold text-blue-800">Total People</p>
+                    <h3 id="totalPeople" class="text-4xl font-bold text-blue-700 mt-2">0</h3>
                 </div>
-
             </div>
-
         </div>
 
     </div>
-
 </div>
 
-
-
 <script>
-
 const webcamImg = document.getElementById('webcamStream');
-
 const startBtn = document.getElementById('startCameraBtn');
 const stopBtn = document.getElementById('stopCameraBtn');
-
 const statusEl = document.getElementById('cameraStatus');
 
-const predictionEl = document.getElementById('predictionResult');
-
-
-// CAMERA
-startBtn.onclick = () => {
-
-    webcamImg.src = "/video_feed";
-
-    statusEl.innerText = "Online";
-    statusEl.classList.remove("text-red-500");
-    statusEl.classList.add("text-green-500");
-
-    predictionEl.innerText = "Realtime AI detection started...";
-};
-
-
-stopBtn.onclick = () => {
-
-    webcamImg.src = "";
-
-    statusEl.innerText = "Offline";
-
-    statusEl.classList.remove("text-green-500");
-    statusEl.classList.add("text-red-500");
-
-    predictionEl.innerText = "Camera stopped.";
-};
-
-// =============== IMAGE UPLOAD ===============
 const imageInput = document.getElementById('imageInput');
 const previewImage = document.getElementById('previewImage');
 const resultBox = document.getElementById('resultBox');
 const predictBtn = document.getElementById('predictBtn');
 
 let selectedFile = null;
+let statsInterval = null;
+
+/* ================= CAMERA ================= */
+
+startBtn.onclick = () => {
+
+    webcamImg.src = "/video_feed";
+
+    statusEl.innerText = "ONLINE";
+
+    // bắt đầu realtime stats
+    if (!statsInterval) {
+
+        updateRealtimeStats();
+
+        statsInterval = setInterval(() => {
+            updateRealtimeStats();
+        }, 300);
+    }
+};
+
+stopBtn.onclick = () => {
+
+    webcamImg.src = "";
+
+    statusEl.innerText = "OFFLINE";
+
+    // reset stats
+    document.getElementById('maskCountWebcam').textContent = 0;
+    document.getElementById('noMaskCountWebcam').textContent = 0;
+    document.getElementById('wrongMaskCountWebcam').textContent = 0;
+    document.getElementById('totalPeopleWebcam').textContent = 0;
+
+    // stop interval
+    clearInterval(statsInterval);
+    statsInterval = null;
+};
+
+/* ================= REALTIME STATS ================= */
+
+async function updateRealtimeStats() {
+
+    try {
+
+        const response = await fetch('/api/stats');
+
+        const data = await response.json();
+
+        document.getElementById('maskCountWebcam').textContent =
+            data.with_mask ?? 0;
+
+        document.getElementById('noMaskCountWebcam').textContent =
+            data.without_mask ?? 0;
+
+        document.getElementById('wrongMaskCountWebcam').textContent =
+            data.incorrect_mask ?? 0;
+
+        document.getElementById('totalPeopleWebcam').textContent =
+            data.total_people ?? 0;
+
+    } catch (err) {
+
+        console.error("Realtime stats error:", err);
+    }
+}
+
+/* ================= IMAGE UPLOAD ================= */
 
 imageInput.addEventListener('change', (e) => {
+
     selectedFile = e.target.files[0];
+
     if (selectedFile) {
+
         previewImage.src = URL.createObjectURL(selectedFile);
+
         previewImage.classList.remove('hidden');
-        resultBox.innerHTML = `<p class="text-emerald-600">Ảnh đã tải lên. Nhấn ANALYZE IMAGE để phân tích.</p>`;
+
+        resultBox.innerHTML =
+            `<p class="text-emerald-600 font-semibold">
+                Ảnh đã tải lên. Nhấn ANALYZE IMAGE để phân tích.
+            </p>`;
     }
 });
 
 predictBtn.addEventListener('click', async () => {
 
     if (!selectedFile) {
-        alert("Vui lòng chọn một ảnh trước!");
+
+        alert("Vui lòng chọn ảnh!");
+
         return;
     }
 
@@ -340,6 +289,7 @@ predictBtn.addEventListener('click', async () => {
     `;
 
     const formData = new FormData();
+
     formData.append('image', selectedFile);
 
     try {
@@ -351,26 +301,15 @@ predictBtn.addEventListener('click', async () => {
 
         const data = await response.json();
 
-        console.log("SERVER RESPONSE:", data);
-
-        // ============================================
-        // ERROR
-        // ============================================
-
         if (data.status !== "success") {
 
-            resultBox.innerHTML = `
-                <p class="text-red-500 font-semibold">
-                    ${data.message || "Phân tích thất bại"}
-                </p>
-            `;
+            resultBox.innerHTML =
+                `<p class="text-red-500 font-semibold">
+                    ${data.message || "Lỗi phân tích"}
+                </p>`;
 
             return;
         }
-
-        // ============================================
-        // UPDATE STATS
-        // ============================================
 
         let withMask = 0;
         let incorrectMask = 0;
@@ -383,9 +322,11 @@ predictBtn.addEventListener('click', async () => {
             if (label.includes("with")) {
                 withMask++;
             }
+
             else if (label.includes("incorrect")) {
                 incorrectMask++;
             }
+
             else {
                 withoutMask++;
             }
@@ -403,37 +344,27 @@ predictBtn.addEventListener('click', async () => {
         document.getElementById('noMaskCount').textContent =
             withoutMask;
 
-        // ============================================
-        // SHOW RESULT IMAGE
-        // ============================================
-
         if (data.image) {
 
             previewImage.src =
                 `data:image/jpeg;base64,${data.image}`;
-
-            previewImage.classList.remove('hidden');
         }
 
-        // ============================================
-        // SHOW RESULT DETAILS
-        // ============================================
-
         let html = `
-            <div class="space-y-3 w-full">
+        <div class="space-y-3 w-full">
 
-                <div class="text-center mb-4">
-                    <p class="text-emerald-600 text-2xl font-bold">
-                        ✅ Analysis Completed
-                    </p>
+            <div class="text-center mb-4">
+                <p class="text-emerald-600 text-2xl font-bold">
+                    Analysis Completed
+                </p>
 
-                    <p class="text-gray-500 mt-1">
-                        Detected ${data.total_faces} face(s)
-                    </p>
-                </div>
+                <p class="text-gray-500 mt-1">
+                    Detected ${data.total_faces} face(s)
+                </p>
+            </div>
         `;
 
-        data.results.forEach((r, index) => {
+        data.results.forEach((r, i) => {
 
             let color = "text-red-600";
             let bg = "bg-red-50";
@@ -441,34 +372,37 @@ predictBtn.addEventListener('click', async () => {
             const label = r.label.toLowerCase();
 
             if (label.includes("with")) {
+
                 color = "text-green-600";
                 bg = "bg-green-50";
             }
+
             else if (label.includes("incorrect")) {
+
                 color = "text-yellow-600";
                 bg = "bg-yellow-50";
             }
 
             html += `
-                <div class="${bg} rounded-2xl p-4 border flex justify-between items-center">
+            <div class="${bg} rounded-2xl p-4 border flex justify-between items-center">
 
-                    <div>
-                        <p class="font-bold ${color}">
-                            Face ${index + 1}
-                        </p>
+                <div>
+                    <p class="font-bold ${color}">
+                        Face ${i + 1}
+                    </p>
 
-                        <p class="text-sm text-gray-600">
-                            ${r.label}
-                        </p>
-                    </div>
-
-                    <div class="text-right">
-                        <p class="text-lg font-bold ${color}">
-                            ${r.confidence}%
-                        </p>
-                    </div>
-
+                    <p class="text-sm text-gray-600">
+                        ${r.label}
+                    </p>
                 </div>
+
+                <div class="text-right">
+                    <p class="text-lg font-bold ${color}">
+                        ${r.confidence}%
+                    </p>
+                </div>
+
+            </div>
             `;
         });
 
@@ -476,20 +410,16 @@ predictBtn.addEventListener('click', async () => {
 
         resultBox.innerHTML = html;
 
-    } catch (error) {
+    } catch (err) {
 
-        console.error(error);
+        console.error(err);
 
-        resultBox.innerHTML = `
-            <p class="text-red-500 font-semibold">
-                Lỗi kết nối server. Vui lòng thử lại.
-            </p>
-        `;
+        resultBox.innerHTML =
+            `<p class="text-red-500 font-semibold">
+                Lỗi kết nối server
+            </p>`;
     }
-
 });
-
 </script>
-
 </body>
 </html>
