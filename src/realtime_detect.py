@@ -192,6 +192,95 @@ def process_frame(frame, model, face_cascade):
     return frame
 
 
+
+# =========================================================
+# GENERATE FRAMES FOR FLASK
+# =========================================================
+def generate_frames(
+    model,
+    face_cascade,
+    use_mediapipe=False,
+    face_detector=None
+):
+
+    cap = cv2.VideoCapture(WEBCAM_INDEX, cv2.CAP_DSHOW)
+
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
+
+    if not cap.isOpened():
+
+        print("❌ Cannot open webcam")
+
+        return
+
+    print("✅ Webcam started")
+
+    while True:
+
+        success, frame = cap.read()
+
+        if not success:
+
+            print("❌ Cannot read frame")
+
+            break
+
+        try:
+
+            # =============================================
+            # PROCESS FRAME
+            # =============================================
+
+            frame = process_frame(
+
+                frame,
+
+                model,
+
+                face_cascade,
+
+                use_mediapipe,
+
+                face_detector
+            )
+
+            # =============================================
+            # ENCODE JPEG
+            # =============================================
+
+            ret, buffer = cv2.imencode(
+                ".jpg",
+                frame
+            )
+
+            if not ret:
+                continue
+
+            frame_bytes = buffer.tobytes()
+
+            # =============================================
+            # STREAM FRAME
+            # =============================================
+
+            yield (
+
+                b"--frame\r\n"
+
+                b"Content-Type: image/jpeg\r\n\r\n"
+
+                + frame_bytes +
+
+                b"\r\n"
+            )
+
+        except Exception as e:
+
+            print(f"❌ Frame Error: {e}")
+
+            continue
+
+    cap.release()
 # =========================================================
 # 🔥 FLASK REQUIRED FUNCTION
 # =========================================================

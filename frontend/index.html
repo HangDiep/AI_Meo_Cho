@@ -114,85 +114,85 @@
         </div>
 
 
-        <!-- IMAGE UPLOAD -->
+        <!-- IMAGE UPLOAD SECTION -->
         <div class="card p-6">
-
-            <div class="flex justify-between items-center mb-6">
-
+            <h2 class="text-2xl font-bold text-emerald-600 mb-6">Image Upload Detection</h2>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Upload Area -->
                 <div>
-                    <h2 class="text-2xl font-bold text-emerald-600">
-                        Image Detection
-                    </h2>
-
-                    <p class="text-gray-500">
-                        Upload image for AI prediction
-                    </p>
-                </div>
-
-            </div>
-
-            <div class="grid lg:grid-cols-2 gap-6">
-
-                <!-- UPLOAD -->
-                <div>
-
-                    <label class="border-2 border-dashed border-emerald-400 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 transition">
-
-                        <input type="file"
-                               id="uploadImage"
-                               accept="image/*"
-                               class="hidden">
-
-                        <div class="text-6xl mb-4">
-                            📷
-                        </div>
-
-                        <h3 class="font-bold text-lg">
-                            Upload Image
-                        </h3>
-
-                        <p class="text-gray-500 text-sm mt-2">
-                            JPG, PNG supported
-                        </p>
-
+                    <label id="dropZone" class="border-2 border-dashed border-emerald-400 rounded-3xl p-12 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition">
+                        <input type="file" id="imageInput" accept="image/*" class="hidden">
+                        <div class="text-6xl mb-4">📸</div>
+                        <p class="font-semibold text-lg">Click or drop image here</p>
+                        <p class="text-gray-500 text-sm mt-1">JPG, PNG supported</p>
                     </label>
 
-                    <button id="predictBtn"
-                            class="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition">
+                    <button id="predictBtn" 
+                            class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold text-lg transition">
                         ANALYZE IMAGE
                     </button>
-
                 </div>
 
-
-                <!-- PREVIEW -->
+                <!-- Preview & Result Image -->
                 <div>
+                    <p class="text-sm text-gray-500 mb-2">Ảnh gốc</p>
+                    <img id="previewImage" class="w-full h-80 object-cover rounded-3xl border hidden">
 
-                    <img id="previewImage"
-                         class="w-full h-[320px] object-cover rounded-2xl border hidden">
+                    <p class="text-sm text-gray-500 mt-6 mb-2">Kết quả AI (có khung)</p>
+                    <img id="resultImage" class="w-full h-80 object-cover rounded-3xl border hidden">
 
-                    <div id="uploadResult"
-                         class="mt-5 bg-gray-50 rounded-2xl p-5 text-lg font-semibold text-center text-gray-700">
-                        No image uploaded
+                    <div id="resultBox" class="mt-6 bg-gray-50 rounded-3xl p-5 text-sm min-h-[180px]">
+                        <p class="text-gray-400 text-center">Upload ảnh để phân tích</p>
                     </div>
+                </div>
+            </div>
+        </div>
 
+    </div>
+
+
+    <!-- RIGHT COLUMN -->
+    <div class="space-y-6">
+        <div class="card p-6">
+            <h2 class="text-2xl font-bold text-emerald-600 mb-6">Image Statistics</h2>
+            <div class="space-y-4">
+                <div class="bg-green-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-green-800">With Mask</p>
+                    <h3 id="maskCount" class="text-5xl font-bold text-green-700 mt-1">0</h3>
+                </div>
+                <div class="bg-yellow-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-yellow-800">
+                        Incorrect Mask
+                    </p>
+
+                    <h3 id="wrongMaskCount"
+                        class="text-4xl font-bold text-yellow-700 mt-2">
+                        0
+                    </h3>
+                </div>
+
+                <div class="bg-blue-100 p-5 rounded-2xl">
+                    <p class="font-semibold text-blue-800">
+                        Total People
+                    </p>
+
+                    <h3 id="totalPeople"
+                        class="text-4xl font-bold text-blue-700 mt-2">
+                        0
+                    </h3>
                 </div>
 
             </div>
 
         </div>
 
-    </div>
 
-
-    <!-- RIGHT -->
-    <div class="space-y-6">
-
-        <!-- WEBCAM STATS -->
-        <div class="card p-6">
+        <!-- IMAGE STATS -->
+        <<div class="card p-6">
 
             <h2 class="text-2xl font-bold text-emerald-600 mb-6">
-                Webcam Statistics
+                Image Statistics
             </h2>
 
             <div class="space-y-4">
@@ -245,65 +245,9 @@
 
         </div>
 
-
-        <!-- IMAGE STATS -->
-        <div class="card p-6">
-
-    <h2 class="text-2xl font-bold text-emerald-600 mb-6">
-        Image Statistics
-    </h2>
-
-    <div class="space-y-4">
-
-        <div class="bg-green-100 p-5 rounded-2xl">
-            <p class="font-semibold text-green-800">
-                Wearing Mask
-            </p>
-
-            <h3 id="imgMaskCount"
-                class="text-4xl font-bold text-green-700 mt-2">
-                0
-            </h3>
-        </div>
-
-        <div class="bg-red-100 p-5 rounded-2xl">
-            <p class="font-semibold text-red-800">
-                Without Mask
-            </p>
-
-            <h3 id="imgNoMaskCount"
-                class="text-4xl font-bold text-red-700 mt-2">
-                0
-            </h3>
-        </div>
-
-        <div class="bg-yellow-100 p-5 rounded-2xl">
-            <p class="font-semibold text-yellow-800">
-                Incorrect Mask
-            </p>
-
-            <h3 id="imgWrongMaskCount"
-                class="text-4xl font-bold text-yellow-700 mt-2">
-                0
-            </h3>
-        </div>
-
-        <div class="bg-blue-100 p-5 rounded-2xl">
-            <p class="font-semibold text-blue-800">
-                Total People
-            </p>
-
-            <h3 id="imgTotalPeople"
-                class="text-4xl font-bold text-blue-700 mt-2">
-                0
-            </h3>
-        </div>
-
     </div>
 
 </div>
-
-    </div>
 
 
 
@@ -344,27 +288,19 @@ stopBtn.onclick = () => {
     predictionEl.innerText = "Camera stopped.";
 };
 
-
-// IMAGE UPLOAD
-const uploadInput = document.getElementById('uploadImage');
-
+// =============== IMAGE UPLOAD ===============
+const imageInput = document.getElementById('imageInput');
 const previewImage = document.getElementById('previewImage');
+const resultImage = document.getElementById('resultImage');
+const resultBox = document.getElementById('resultBox');
+const predictBtn = document.getElementById('predictBtn');
 
-const uploadResult = document.getElementById('uploadResult');
+let selectedFile = null;
 
-const imageResult = document.getElementById('imageResult');
-
-const imageConfidence = document.getElementById('imageConfidence');
-
-
-uploadInput.addEventListener('change', (e) => {
-
-    const file = e.target.files[0];
-
-    if(file){
-
-        previewImage.src = URL.createObjectURL(file);
-
+imageInput.addEventListener('change', (e) => {
+    selectedFile = e.target.files[0];
+    if (selectedFile) {
+        previewImage.src = URL.createObjectURL(selectedFile);
         previewImage.classList.remove('hidden');
 
         uploadResult.innerHTML = `
@@ -387,37 +323,6 @@ document.getElementById('predictBtn').onclick = () => {
         </div>
     `;
 };
-// ======================================================
-// REALTIME STATS
-// ======================================================
-
-async function updateStats(){
-
-    try{
-
-        const response = await fetch("/api/stats");
-
-        const data = await response.json();
-
-        document.getElementById("maskCount").innerText =
-            data.with_mask;
-
-        document.getElementById("noMaskCount").innerText =
-            data.without_mask;
-
-        document.getElementById("wrongMaskCount").innerText =
-            data.incorrect_mask;
-
-        document.getElementById("totalPeople").innerText =
-            data.total;
-
-    }catch(err){
-        console.log(err);
-    }
-}
-
-// update every 500ms
-setInterval(updateStats, 500);
 
 </script>
 
